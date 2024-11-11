@@ -46,8 +46,10 @@ const createWindow = () => {
     );
   }
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+  }
 };
 
 ipcMain.handle("dark-mode:system", () => {

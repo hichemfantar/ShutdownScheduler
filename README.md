@@ -32,7 +32,7 @@ An Electron-powered desktop app for scheduling automated shutdown and reboot tas
 1. Clone the repository and install dependencies:
 
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/hichemfantar/shutdown-scheduler
    cd shutdown-scheduler
    npm install
    ```
@@ -43,10 +43,16 @@ An Electron-powered desktop app for scheduling automated shutdown and reboot tas
    npm run dev
    ```
 
-3. **Build for production**:
+3. **Package application**:
 
    ```bash
-   npm run build
+   npm run package
+   ```
+
+4. **Generate platform specific distributables**:
+
+   ```bash
+   npm run make
    ```
 
 ## Usage

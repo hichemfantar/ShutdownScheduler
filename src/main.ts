@@ -19,6 +19,7 @@ const createWindow = () => {
     width: 1280,
     height: 720,
     fullscreenable: false,
+    autoHideMenuBar: !!MAIN_WINDOW_VITE_DEV_SERVER_URL ? false : true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       sandbox: false,

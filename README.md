@@ -2,6 +2,11 @@
 
 An Electron-powered desktop app for scheduling automated shutdown and reboot tasks. Built with Vite, React, and TypeScript, it supports Windows, Linux, macOS, and Unix-like systems. The app uses Task Scheduler on Windows and Cron jobs on Linux/Unix for seamless, platform-specific automation.
 
+## Screenshots
+
+![Main Screen](demo.png)
+*Main interface.*
+
 ## Features
 
 - **Flexible Scheduling**: Set shutdowns or reboots to occur once, daily, or weekly.

@@ -1,4 +1,4 @@
-WINDOWS handles date formats in commands according to thee user
+// WINDOWS handles date formats in commands according to thee user
 
 import { contextBridge } from "electron";
 import { exec } from "child_process";
@@ -43,19 +43,23 @@ export const bridgeApi = {
   // Method 1: Set shutdown timer using the shutdown command
   setShutdownTimerCommand: (delayInSeconds: number) => {
     const command = `shutdown -s -t ${delayInSeconds}`;
-    exec(command,{
-      shell: "cmd"
-    }, (error) => {
-      if (error) {
-        console.error(
-          `Error setting shutdown timer with command: ${error.message}`
-        );
-      } else {
-        console.log(
-          `Shutdown timer set for ${delayInSeconds} seconds via shutdown command`
-        );
+    exec(
+      command,
+      {
+        shell: "cmd",
+      },
+      (error) => {
+        if (error) {
+          console.error(
+            `Error setting shutdown timer with command: ${error.message}`
+          );
+        } else {
+          console.log(
+            `Shutdown timer set for ${delayInSeconds} seconds via shutdown command`
+          );
+        }
       }
-    });
+    );
   },
 
   // Method 2: Set shutdown timer using Task Scheduler with a specified date

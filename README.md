@@ -5,7 +5,7 @@ An Electron-powered desktop app for scheduling automated shutdown and reboot tas
 ## Screenshots
 
 ![Main Screen](demo.png)
-*Main interface.*
+_Main interface._
 
 ## Features
 
@@ -13,7 +13,7 @@ An Electron-powered desktop app for scheduling automated shutdown and reboot tas
 - **Task Management**: Enable, disable, delete individual or all tasks.
 - **Cross-Platform**: Compatible with Windows, Linux, Unix-like systems, and macOS.
 - **User-Friendly**: Tasks managed via JSON, keeping a record of all scheduled activities.
-  
+
 ## Technologies
 
 - **Electron** for cross-platform desktop functionality

@@ -73,7 +73,7 @@
   body {
     /* @apply text-foreground; */
     @apply bg-[#191920] text-foreground;
-    background-image: url(/assets/gradient-grainy-gradient-background_23-2149922133.jpg);
+    background-image: url(/assets/gradient-grainy-gradient-background.jpg);
     background-blend-mode: multiply;
     background-size: cover;
     /* background-size: 100% 2000px, 100% auto; */

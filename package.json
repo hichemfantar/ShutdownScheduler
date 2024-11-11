@@ -8,7 +8,6 @@
     "name": "Hichem Fantar",
     "email": "fantar.hichem@gmail.com"
   },
-  "license": "MIT",
   "main": ".vite/build/main.js",
   "engines": {
     "node": ">=20"

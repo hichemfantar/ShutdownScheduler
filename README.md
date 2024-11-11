@@ -66,10 +66,6 @@ An Electron-powered desktop app for scheduling automated shutdown and reboot tas
 - **Windows**: Utilizes Windows Task Scheduler to set up shutdown/reboot tasks.
 - **Linux/Unix/macOS**: Uses Cron jobs for scheduling tasks.
 
-## License
-
-This project is licensed under the MIT License.
-
 ---
 
 Enjoy automated scheduling with customizable options across platforms!

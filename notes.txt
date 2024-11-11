@@ -1,0 +1,3 @@
+on open, sync json file with system db,
+if tasks with name prefix found in both then update the system according the json,
+if found in system but not found in json then delete from system

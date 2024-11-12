@@ -7,8 +7,10 @@ import { MakerDeb } from "@electron-forge/maker-deb";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import { exec } from "child_process";
 import path from "path";
 import os from "os";
+import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
 
 const config: ForgeConfig = {
   packagerConfig: {
@@ -28,6 +30,78 @@ const config: ForgeConfig = {
     // new MakerRpm({}),
     new MakerDeb({}),
     // new MakerDMG(),
+  ],
+  hooks: {
+    // generateAssets: async (forgeConfig, resources) => {
+    //   console.log("generateAssets hook");
+    //   console.log(forgeConfig);
+    //   console.log(resources);
+    // },
+    postPackage: async (forgeConfig, options) => {
+      console.info("Packages built at:", options.outputPaths);
+      const appPath = path.join(
+        options.outputPaths[0],
+        "Shutdown Scheduler.app"
+      );
+
+      // due to a bug with forgeConfig, i have to resign the app manually
+      // https://github.com/electron/forge/issues/3754
+
+      // Function to run a shell command
+      const runCommand = (command: string) => {
+        return new Promise((resolve, reject) => {
+          exec(command, (error, stdout, stderr) => {
+            if (error) {
+              reject({ error, stderr });
+            } else {
+              resolve(stdout);
+            }
+          });
+        });
+      };
+
+      try {
+        // Run the codesign verification command
+        await runCommand(
+          `codesign --verify --deep --strict --verbose=2 "${appPath}"`
+        );
+        console.info("Codesign verification succeeded.");
+      } catch (verificationError) {
+        console.error(
+          "Codesign verification failed:",
+          verificationError.stderr
+        );
+
+        // Attempt to re-sign the application if verification fails
+        try {
+          console.info("Attempting to re-sign the application...");
+          await runCommand(`codesign --force --deep --sign - "${appPath}"`);
+          console.info("Re-signing succeeded.");
+
+          // Re-run the verification after re-signing
+          await runCommand(
+            `codesign --verify --deep --strict --verbose=2 "${appPath}"`
+          );
+          console.info("Re-verification succeeded after re-signing.");
+        } catch (signingError) {
+          console.error("Re-signing failed:", signingError.stderr);
+          throw new Error("Re-signing failed.");
+        }
+      }
+    },
+  },
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {
+          owner: "hichemfantar",
+          name: "shutdown-scheduler",
+        },
+        prerelease: true,
+        draft: true,
+      } as PublisherGitHubConfig,
+    },
   ],
   plugins: [
     new VitePlugin({

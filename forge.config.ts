@@ -89,6 +89,9 @@ const config: ForgeConfig = {
         }
       }
     },
+    // preMake: async () => {
+    //   console.log("preMake hook");
+    // },
   },
   publishers: [
     {

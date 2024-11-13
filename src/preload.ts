@@ -166,18 +166,6 @@ export const bridgeApi = {
       hour12: false,
     });
 
-    const schedules = loadSchedules();
-    schedules.push({
-      taskName,
-      timestamp,
-      delayInSeconds,
-      scheduledTime,
-      enabled,
-      scheduleType,
-      daysOfWeek,
-    });
-    saveSchedules(schedules);
-
     if (!enabled) {
       console.log(`Task ${taskName} saved but not enabled.`);
       return;
@@ -204,6 +192,18 @@ export const bridgeApi = {
           console.error(`Error setting ${action} timer: ${error.message}`);
         } else {
           console.log(`${action} timer set for ${delayInSeconds} seconds`);
+          const schedules = loadSchedules();
+          schedules.push({
+            taskName,
+            timestamp,
+            delayInSeconds,
+            scheduledTime,
+            enabled,
+            scheduleType,
+            daysOfWeek,
+          });
+          saveSchedules(schedules);
+
           if (onSucess) {
             onSucess();
           }
@@ -242,6 +242,18 @@ export const bridgeApi = {
           } else {
             console.log(`${action} set for once at ${atTime}`);
             if (onSucess) {
+              const schedules = loadSchedules();
+              schedules.push({
+                taskName,
+                timestamp,
+                delayInSeconds,
+                scheduledTime,
+                enabled,
+                scheduleType,
+                daysOfWeek,
+              });
+              saveSchedules(schedules);
+
               onSucess();
             }
           }
@@ -275,6 +287,18 @@ export const bridgeApi = {
                 `${scheduleType} cron job set for ${delayInSeconds} seconds`
               );
               if (onSucess) {
+                const schedules = loadSchedules();
+                schedules.push({
+                  taskName,
+                  timestamp,
+                  delayInSeconds,
+                  scheduledTime,
+                  enabled,
+                  scheduleType,
+                  daysOfWeek,
+                });
+                saveSchedules(schedules);
+
                 onSucess();
               }
             }

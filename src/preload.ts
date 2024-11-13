@@ -140,6 +140,7 @@ export const bridgeApi = {
     scheduleType = "once",
     daysOfWeek = [],
     enabled = true,
+    onSucess,
   }: {
     delayInSeconds: number;
     delayInMinutes?: number;
@@ -149,6 +150,7 @@ export const bridgeApi = {
     scheduleType: "once" | "daily" | "weekly";
     daysOfWeek?: string[];
     enabled?: boolean;
+    onSucess?: () => void;
   }): void => {
     const delayInMilliseconds =
       (delayInSeconds > 0 && delayInSeconds <= 60 ? 61 : delayInSeconds) *
@@ -202,6 +204,9 @@ export const bridgeApi = {
           console.error(`Error setting ${action} timer: ${error.message}`);
         } else {
           console.log(`${action} timer set for ${delayInSeconds} seconds`);
+          if (onSucess) {
+            onSucess();
+          }
         }
       });
     } else if (isMacOS || isLinux || isUnix) {
@@ -236,6 +241,9 @@ export const bridgeApi = {
             );
           } else {
             console.log(`${action} set for once at ${atTime}`);
+            if (onSucess) {
+              onSucess();
+            }
           }
         });
       } else {
@@ -266,6 +274,9 @@ export const bridgeApi = {
               console.log(
                 `${scheduleType} cron job set for ${delayInSeconds} seconds`
               );
+              if (onSucess) {
+                onSucess();
+              }
             }
           }
         );

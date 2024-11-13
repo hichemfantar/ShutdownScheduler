@@ -29,10 +29,6 @@ import { cn } from "@/lib/utils";
 
 export function App() {
   const update = useUpdate();
-  useEffect(() => {
-    window.bridge.listShutdownSchedules();
-    return () => {};
-  }, []);
 
   const [selectedAction, setSelectedAction] = useState<"shutdown" | "reboot">(
     "shutdown"
@@ -63,11 +59,6 @@ export function App() {
       prev.map((d) => (d.day === day ? { ...d, selected: !d.selected } : d))
     );
   };
-
-  useEffect(() => {
-    window.bridge.listShutdownSchedules();
-    return () => {};
-  }, []);
 
   const selectedDays = days.filter((d) => d.selected).map((d) => d.day);
 
@@ -270,7 +261,7 @@ export function App() {
                     delayInMinutes: scheduleInMinutes,
                     delayInHours: scheduleInHours,
                     delayInDays: scheduleInDays,
-                    callback: () => {
+                    onSucess: () => {
                       update();
                     },
                   });

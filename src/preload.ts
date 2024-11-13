@@ -6,6 +6,7 @@ import os from "os";
 
 // Define a type for shutdown schedule entries
 interface ShutdownSchedule {
+  action: "shutdown" | "reboot";
   taskName: string;
   timestamp: number;
   delayInSeconds: number;
@@ -212,6 +213,7 @@ export const bridgeApi = {
         console.log(`${action} timer set for ${delayInSeconds} seconds`);
         const schedules = loadSchedules();
         schedules.push({
+          action,
           taskName,
           timestamp,
           delayInSeconds,
@@ -281,6 +283,7 @@ export const bridgeApi = {
           if (onSuccess) {
             const schedules = loadSchedules();
             schedules.push({
+              action,
               taskName,
               timestamp,
               delayInSeconds,
@@ -324,6 +327,7 @@ export const bridgeApi = {
           if (onSuccess) {
             const schedules = loadSchedules();
             schedules.push({
+              action,
               taskName,
               timestamp,
               delayInSeconds,

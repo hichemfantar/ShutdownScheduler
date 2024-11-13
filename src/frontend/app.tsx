@@ -24,11 +24,14 @@ import {
 } from "@/components/ui/card";
 import { BanIcon, ListPlus, PlusIcon, Trash2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 
 export function App() {
   const update = useUpdate();
+  const { toast } = useToast();
 
   const [selectedAction, setSelectedAction] = useState<"shutdown" | "reboot">(
     "shutdown"
@@ -39,7 +42,7 @@ export function App() {
   );
 
   const [days, setDays] = useState([
-    { day: "Mon", selected: false },
+    { day: "Mon", selected: true },
     { day: "Tue", selected: false },
     { day: "Wed", selected: false },
     { day: "Thu", selected: false },
@@ -55,6 +58,14 @@ export function App() {
   const [scheduleInDays, setScheduleInDays] = useState(0);
 
   const handleDaySelect = (day: string) => {
+    if (selectedDays.length === 1 && selectedDays.includes(day)) {
+      toast({
+        title: "Error",
+        description: "At least one day must be selected.",
+      });
+
+      return;
+    }
     setDays((prev) =>
       prev.map((d) => (d.day === day ? { ...d, selected: !d.selected } : d))
     );
@@ -138,6 +149,7 @@ export function App() {
                     <div className="h-9 bg-gray-50/20 w-[1px]"></div>
                     <div className="flex items-center space-x-2">
                       <Switch
+                        // disabled
                         id="Tuesday"
                         checked={days.find((d) => d.day === "Tue")?.selected}
                         onCheckedChange={() => handleDaySelect("Tue")}
@@ -304,7 +316,7 @@ export function App() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="grid gap-6">
+            <CardContent className="grid gap-4">
               {window.bridge.listShutdownSchedules().length === 0 && (
                 <div className="flex items-center justify-center">
                   <span className="text-muted-foreground">
@@ -317,51 +329,78 @@ export function App() {
                 .slice()
                 .reverse()
                 .map(
-                  ({ timestamp, delayInSeconds, taskName, enabled, jobId }) => (
-                    <div
-                      key={timestamp}
-                      className="flex items-center justify-between space-x-2"
-                    >
-                      <Label
-                        htmlFor={taskName}
-                        className="flex flex-col space-y-1"
-                      >
-                        <span>
-                          Shutdown scheduled at{" "}
-                          {new Date(timestamp).toLocaleString()}
-                        </span>
-                        <span className="font-normal leading-snug text-muted-foreground">
-                          Delay in seconds: {delayInSeconds}
-                        </span>
-                      </Label>
-                      <div className="flex items-center gap-4">
-                        <Switch
-                          id={taskName}
-                          checked={enabled}
-                          onCheckedChange={() => {
-                            if (!enabled) {
-                              window.bridge.enableTask(taskName);
-                            } else {
-                              window.bridge.disableTask(taskName);
-                            }
-                            update();
-                          }}
-                        />
-                        <Button
-                          onClick={async () => {
-                            await window.bridge.cancelShutdownTask(
-                              taskName,
-                              jobId
-                            );
-                            update();
-                          }}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2Icon />
-                        </Button>
+                  ({
+                    action,
+                    timestamp,
+                    delayInSeconds,
+                    taskName,
+                    enabled,
+                    jobId,
+                    daysOfWeek,
+                    scheduleType,
+                  }) => (
+                    <React.Fragment key={timestamp}>
+                      <div className="flex items-center justify-between gap-x-2">
+                        <div className="flex flex-col gap-2">
+                          <span>
+                            {
+                              {
+                                shutdown: "Shutdown",
+                                reboot: "Restart",
+                              }[action]
+                            }{" "}
+                            scheduled{" "}
+                            <Badge variant="outline">{scheduleType}</Badge> at{" "}
+                            {new Date(timestamp).toLocaleString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {/* <span className="font-normal leading-snug text-muted-foreground">
+                              Delay in seconds: {delayInSeconds}
+                            </span> */}
+                            {scheduleType === "weekly" &&
+                              daysOfWeek.length > 0 && (
+                                <div className="flex gap-2">
+                                  {daysOfWeek.map((day) => (
+                                    <Badge variant="default">{day}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Switch
+                            id={taskName}
+                            checked={enabled}
+                            onCheckedChange={() => {
+                              if (!enabled) {
+                                window.bridge.enableTask(taskName);
+                              } else {
+                                window.bridge.disableTask(taskName);
+                              }
+                              update();
+                            }}
+                          />
+                          <Button
+                            onClick={async () => {
+                              await window.bridge.cancelShutdownTask(
+                                taskName,
+                                jobId
+                              );
+                              update();
+                            }}
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <Trash2Icon />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                      <div className="border-b last:border-b-0 last:hidden"></div>
+                    </React.Fragment>
                   )
                 )}
             </CardContent>

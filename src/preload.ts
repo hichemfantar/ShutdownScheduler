@@ -17,11 +17,8 @@ interface ShutdownSchedule {
   jobId?: string;
 }
 
-type RunCommandError = { error: ExecException; stderr: string };
-const execAsync = (
-  command: string,
-  options?: ExecOptions
-): Promise<string | RunCommandError> => {
+export type ExecAsyncError = { error: ExecException; stderr: string };
+const execAsync = (command: string, options?: ExecOptions): Promise<string> => {
   return new Promise((resolve, reject) => {
     exec(command, options, (error, stdout, stderr) => {
       if (error) {
@@ -72,7 +69,7 @@ const formatCronTime = (timestamp: number): string => {
 
 const enableCronTask = async (taskName: string) => {
   try {
-    const stdout: string = await execAsync(`crontab -l`);
+    const stdout = await execAsync(`crontab -l`);
     // Enable cron job by uncommenting the line after the task name comment
     const updatedCron = stdout
       .split("\n")
@@ -104,7 +101,7 @@ const enableCronTask = async (taskName: string) => {
 
 const disableCronTask = async (taskName: string) => {
   try {
-    const stdout: string = await execAsync(`crontab -l`);
+    const stdout = await execAsync(`crontab -l`);
     // Disable cron job by commenting out the line after the task name comment
     const updatedCron = stdout
       .split("\n")
@@ -249,15 +246,32 @@ export const bridgeApi = {
 
       if (scheduleType === "once") {
         // Use `at` command for one-time scheduling
-        const atTime = new Date(timestamp).toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
+        // const atTime = new Date(timestamp).toLocaleTimeString("en-GB", {
+        //   hour: "2-digit",
+        //   minute: "2-digit",
+        //   hour12: true,
+        // });
+
+        const date = new Date(timestamp);
+
+        // Format the date as MM/DD/YYYY
+        const formattedDate = `${String(date.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+
+        // Format the time as HH:MM
+        const formattedTime = `${String(date.getHours()).padStart(
+          2,
+          "0"
+        )}:${String(date.getMinutes()).padStart(2, "0")}`;
+
+        const atTime = `${formattedTime} ${formattedDate}`;
+
         console.log(`echo "${command}" | at ${atTime}`);
 
         try {
-          const stdout: string = await execAsync(
+          const stdout = await execAsync(
             `echo "${command}" | at ${atTime} 2>&1 | head -n 1 | grep -oE '[0-9]+'`
           );
           const jobId = stdout.split("\n")[0].trim(); // Extracts job ID (numeric part)
@@ -388,7 +402,7 @@ export const bridgeApi = {
       }
     } else {
       try {
-        const stdout: string = await execAsync(`crontab -l`);
+        const stdout = await execAsync(`crontab -l`);
         const updatedCron = stdout
           .split("\n")
           .filter((line) => !line.startsWith(`# ${taskNamePrefix}_`))

@@ -1,4 +1,4 @@
-import { exec, spawn } from "child_process";
+import { exec, ExecException, ExecOptions } from "child_process";
 import { contextBridge } from "electron";
 import fs from "fs";
 import path from "path";
@@ -13,7 +13,25 @@ interface ShutdownSchedule {
   enabled: boolean;
   scheduleType: "once" | "daily" | "weekly";
   daysOfWeek?: string[];
+  // Optional job ID for one-time scheduling with `at`
+  jobId?: string;
 }
+
+type RunCommandError = { error: ExecException; stderr: string };
+const execAsync = (
+  command: string,
+  options?: ExecOptions
+): Promise<string | RunCommandError> => {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (error, stdout, stderr) => {
+      if (error) {
+        reject({ error, stderr });
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
+};
 
 // Paths and constants
 // const shutdownSchedulesPath = path.join(
@@ -52,13 +70,9 @@ const formatCronTime = (timestamp: number): string => {
   return `${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
 };
 
-const enableCronTask = (taskName: string) => {
-  exec(`crontab -l`, (error, stdout) => {
-    if (error) {
-      console.error(`Error reading crontab: ${error.message}`);
-      return;
-    }
-
+const enableCronTask = async (taskName: string) => {
+  try {
+    const stdout: string = await execAsync(`crontab -l`);
     // Enable cron job by uncommenting the line after the task name comment
     const updatedCron = stdout
       .split("\n")
@@ -74,25 +88,23 @@ const enableCronTask = (taskName: string) => {
       })
       .join("\n");
 
-    exec(`echo "${updatedCron}" | crontab -`, (error) => {
-      if (error) {
-        console.error(
-          `Error enabling cron job for ${taskName}: ${error.message}`
-        );
-      } else {
-        console.log(`Cron job ${taskName} enabled.`);
-      }
-    });
-  });
+    try {
+      await execAsync(`echo "${updatedCron}" | crontab -`);
+      console.log(`Cron job ${taskName} enabled.`);
+    } catch (error) {
+      console.error(
+        `Error enabling cron job for ${taskName}: ${error.message}`
+      );
+    }
+  } catch (error) {
+    console.error(`Error reading crontab: ${error.message}`);
+    return;
+  }
 };
 
-const disableCronTask = (taskName: string) => {
-  exec(`crontab -l`, (error, stdout) => {
-    if (error) {
-      console.error(`Error reading crontab: ${error.message}`);
-      return;
-    }
-
+const disableCronTask = async (taskName: string) => {
+  try {
+    const stdout: string = await execAsync(`crontab -l`);
     // Disable cron job by commenting out the line after the task name comment
     const updatedCron = stdout
       .split("\n")
@@ -108,16 +120,27 @@ const disableCronTask = (taskName: string) => {
       })
       .join("\n");
 
-    exec(`echo "${updatedCron}" | crontab -`, (error) => {
-      if (error) {
-        console.error(
-          `Error disabling cron job for ${taskName}: ${error.message}`
-        );
-      } else {
-        console.log(`Cron job ${taskName} disabled.`);
-      }
-    });
-  });
+    try {
+      await execAsync(`echo "${updatedCron}" | crontab -`);
+      console.log(`Cron job ${taskName} disabled.`);
+    } catch (error) {
+      console.error(
+        `Error disabling cron job for ${taskName}: ${error.message}`
+      );
+    }
+  } catch (error) {
+    console.error(`Error reading crontab: ${error.message}`);
+    return;
+  }
+};
+
+const deleteAtTask = async (jobId: string) => {
+  try {
+    await execAsync(`atrm ${jobId}`);
+    console.log(`At job with ID ${jobId} disabled.`);
+  } catch (error) {
+    console.error(`Error disabling at job with ID ${jobId}: ${error.message}`);
+  }
 };
 
 // Shutdown scheduling and management API
@@ -131,7 +154,7 @@ export const bridgeApi = {
     }));
   },
 
-  setShutdownTimerTask: ({
+  setShutdownTimerTask: async ({
     delayInSeconds,
     delayInMinutes = 0,
     delayInHours = 0,
@@ -140,7 +163,7 @@ export const bridgeApi = {
     scheduleType = "once",
     daysOfWeek = [],
     enabled = true,
-    onSucess,
+    onSuccess,
   }: {
     delayInSeconds: number;
     delayInMinutes?: number;
@@ -150,8 +173,8 @@ export const bridgeApi = {
     scheduleType: "once" | "daily" | "weekly";
     daysOfWeek?: string[];
     enabled?: boolean;
-    onSucess?: () => void;
-  }): void => {
+    onSuccess?: () => void;
+  }) => {
     const delayInMilliseconds =
       (delayInSeconds > 0 && delayInSeconds <= 60 ? 61 : delayInSeconds) *
         1000 +
@@ -187,28 +210,27 @@ export const bridgeApi = {
         schtasksCommand += " /sc once";
       }
 
-      exec(schtasksCommand, (error) => {
-        if (error) {
-          console.error(`Error setting ${action} timer: ${error.message}`);
-        } else {
-          console.log(`${action} timer set for ${delayInSeconds} seconds`);
-          const schedules = loadSchedules();
-          schedules.push({
-            taskName,
-            timestamp,
-            delayInSeconds,
-            scheduledTime,
-            enabled,
-            scheduleType,
-            daysOfWeek,
-          });
-          saveSchedules(schedules);
+      try {
+        await execAsync(schtasksCommand);
+        console.log(`${action} timer set for ${delayInSeconds} seconds`);
+        const schedules = loadSchedules();
+        schedules.push({
+          taskName,
+          timestamp,
+          delayInSeconds,
+          scheduledTime,
+          enabled,
+          scheduleType,
+          daysOfWeek,
+        });
+        saveSchedules(schedules);
 
-          if (onSucess) {
-            onSucess();
-          }
+        if (onSuccess) {
+          onSuccess();
         }
-      });
+      } catch (error) {
+        console.error(`Error setting ${action} timer: ${error.message}`);
+      }
     } else if (isMacOS || isLinux || isUnix) {
       // const command = action === "shutdown" ? "poweroff" : "reboot";
       let command = "";
@@ -234,30 +256,35 @@ export const bridgeApi = {
         });
         console.log(`echo "${command}" | at ${atTime}`);
 
-        exec(`echo "${command}" | at ${atTime}`, (error) => {
-          if (error) {
-            console.error(
-              `Error setting one-time ${action} with 'at' command: ${error.message}`
-            );
-          } else {
-            console.log(`${action} set for once at ${atTime}`);
-            if (onSucess) {
-              const schedules = loadSchedules();
-              schedules.push({
-                taskName,
-                timestamp,
-                delayInSeconds,
-                scheduledTime,
-                enabled,
-                scheduleType,
-                daysOfWeek,
-              });
-              saveSchedules(schedules);
+        try {
+          const stdout: string = await execAsync(
+            `echo "${command}" | at ${atTime} 2>&1 | head -n 1 | grep -oE '[0-9]+'`
+          );
+          const jobId = stdout.split("\n")[0].trim(); // Extracts job ID (numeric part)
 
-              onSucess();
-            }
+          console.log(`Job scheduled with ID: ${jobId}`);
+          console.log(`${action} set for once at ${atTime}`);
+          if (onSuccess) {
+            const schedules = loadSchedules();
+            schedules.push({
+              taskName,
+              timestamp,
+              delayInSeconds,
+              scheduledTime,
+              enabled,
+              scheduleType,
+              daysOfWeek,
+              jobId,
+            });
+            saveSchedules(schedules);
+
+            onSuccess();
           }
-        });
+        } catch (error) {
+          console.error(
+            `Error setting one-time ${action} with 'at' command: ${error.message}`
+          );
+        }
       } else {
         // Handle daily or weekly scheduling with cron
         const cronTime = formatCronTime(timestamp);
@@ -272,42 +299,38 @@ export const bridgeApi = {
         }
 
         const cronEntry = `# ${taskName}\n${cronJob}`;
-        exec(
-          `(crontab -l; echo "${cronEntry}") | crontab -`,
-          {
-            shell: "/bin/bash",
-          },
-          (error) => {
-            if (error) {
-              console.error(
-                `Error setting ${scheduleType} ${action} cron job: ${error.message}`
-              );
-            } else {
-              console.log(
-                `${scheduleType} cron job set for ${delayInSeconds} seconds`
-              );
-              if (onSucess) {
-                const schedules = loadSchedules();
-                schedules.push({
-                  taskName,
-                  timestamp,
-                  delayInSeconds,
-                  scheduledTime,
-                  enabled,
-                  scheduleType,
-                  daysOfWeek,
-                });
-                saveSchedules(schedules);
 
-                onSucess();
-              }
-            }
+        try {
+          await execAsync(`(crontab -l; echo "${cronEntry}") | crontab -`, {
+            shell: "/bin/bash",
+          });
+          console.log(
+            `${scheduleType} cron job set for ${delayInSeconds} seconds`
+          );
+          if (onSuccess) {
+            const schedules = loadSchedules();
+            schedules.push({
+              taskName,
+              timestamp,
+              delayInSeconds,
+              scheduledTime,
+              enabled,
+              scheduleType,
+              daysOfWeek,
+            });
+            saveSchedules(schedules);
+
+            onSuccess();
           }
-        );
+        } catch (error) {
+          console.error(
+            `Error setting ${scheduleType} ${action} cron job: ${error.message}`
+          );
+        }
       }
     }
   },
-  cancelShutdownTask: (taskName: string): void => {
+  cancelShutdownTask: async (taskName: string, jobId?: string) => {
     const schedules = loadSchedules();
     const taskIndex = schedules.findIndex(
       (schedule) => schedule.taskName === taskName
@@ -315,79 +338,79 @@ export const bridgeApi = {
 
     if (taskIndex !== -1) {
       if (isWindows) {
-        exec(`schtasks /delete /tn ${taskName} /f`, (error) => {
-          if (error) {
-            console.error(
-              `Error canceling shutdown for task ${taskName}: ${error.message}`
+        try {
+          await execAsync(`schtasks /delete /tn ${taskName} /f`);
+          schedules.splice(taskIndex, 1);
+          saveSchedules(schedules);
+          console.log(`Shutdown canceled successfully for task ${taskName}`);
+        } catch (error) {
+          console.error(
+            `Error canceling shutdown for task ${taskName}: ${error.message}`
+          );
+        }
+      } else {
+        if (jobId) {
+          await deleteAtTask(jobId);
+          schedules.splice(taskIndex, 1);
+          saveSchedules(schedules);
+        } else {
+          try {
+            await execAsync(
+              `crontab -l | sed '/# ${taskName}/,/^$/d' | crontab -`
             );
-          } else {
             schedules.splice(taskIndex, 1);
             saveSchedules(schedules);
-            console.log(`Shutdown canceled successfully for task ${taskName}`);
+            console.log(`Cron job canceled for ${taskName}`);
+          } catch (error) {
+            console.error(
+              `Error removing cron job for ${taskName}: ${error.message}`
+            );
           }
-        });
-      } else {
-        exec(
-          `crontab -l | sed '/# ${taskName}/,/^$/d' | crontab -`,
-          (error) => {
-            if (error) {
-              console.error(
-                `Error removing cron job for ${taskName}: ${error.message}`
-              );
-            } else {
-              schedules.splice(taskIndex, 1);
-              saveSchedules(schedules);
-              console.log(`Cron job canceled for ${taskName}`);
-            }
-          }
-        );
+        }
       }
     } else {
       console.log(`No task found with name ${taskName}`);
     }
   },
 
-  cancelAllShutdowns: (): void => {
+  cancelAllShutdowns: async () => {
     const schedules = loadSchedules();
     if (isWindows) {
-      schedules.forEach(({ taskName }) => {
-        exec(`schtasks /delete /tn ${taskName} /f`, (error) => {
-          if (error) {
-            console.error(
-              `Error canceling shutdown for task ${taskName}: ${error.message}`
-            );
-          } else {
-            console.log(`Shutdown canceled for ${taskName}`);
-          }
-        });
-      });
-    } else {
-      exec("crontab -l", (error, stdout) => {
-        if (error) {
-          console.error(`Error listing cron jobs: ${error.message}`);
-          return;
+      for (const { taskName } of schedules) {
+        try {
+          await execAsync(`schtasks /delete /tn ${taskName} /f`);
+          console.log(`Shutdown canceled for ${taskName}`);
+        } catch (error) {
+          console.error(
+            `Error canceling shutdown for task ${taskName}: ${error.message}`
+          );
         }
-
+      }
+    } else {
+      try {
+        const stdout: string = await execAsync(`crontab -l`);
         const updatedCron = stdout
           .split("\n")
           .filter((line) => !line.startsWith(`# ${taskNamePrefix}_`))
           .join("\n");
 
-        exec(`echo "${updatedCron}" | crontab -`, (error) => {
-          if (error) {
-            console.error(
-              `Error updating crontab to remove shutdown tasks: ${error.message}`
-            );
-          } else {
-            console.log("All shutdown-related cron jobs canceled.");
-          }
-        });
-      });
+        try {
+          await execAsync(`echo "${updatedCron}" | crontab -`);
+          console.log("All shutdown-related cron jobs canceled.");
+        } catch (error) {
+          console.error(
+            `Error updating crontab to remove shutdown tasks: ${error.message}`
+          );
+        }
+      } catch (error) {
+        console.error(`Error listing cron jobs: ${error.message}`);
+        return;
+      }
     }
     saveSchedules([]);
   },
 
-  enableTask: (taskName: string) => {
+  enableTask: async (taskName: string) => {
     const schedules = loadSchedules();
     const schedule = schedules.find((s) => s.taskName === taskName);
 
@@ -397,15 +420,15 @@ export const bridgeApi = {
     }
 
     if (isWindows) {
-      exec(`schtasks /change /tn ${taskName} /enable`, (error) => {
-        if (error) {
-          console.error(`Error enabling task ${taskName}: ${error.message}`);
-          return;
-        }
+      try {
+        await execAsync(`schtasks /change /tn ${taskName} /enable`);
         schedule.enabled = true;
         saveSchedules(schedules);
         console.log(`Task ${taskName} enabled successfully.`);
-      });
+      } catch (error) {
+        console.error(`Error enabling task ${taskName}: ${error.message}`);
+        return;
+      }
     } else {
       enableCronTask(taskName);
       schedule.enabled = true;
@@ -413,7 +436,7 @@ export const bridgeApi = {
     }
   },
 
-  disableTask: (taskName: string) => {
+  disableTask: async (taskName: string) => {
     const schedules = loadSchedules();
     const schedule = schedules.find((s) => s.taskName === taskName);
 
@@ -423,17 +446,18 @@ export const bridgeApi = {
     }
 
     if (isWindows) {
-      exec(`schtasks /change /tn ${taskName} /disable`, (error) => {
-        if (error) {
-          console.error(`Error disabling task ${taskName}: ${error.message}`);
-          return;
-        }
+      try {
+        await execAsync(`schtasks /change /tn ${taskName} /disable`);
         schedule.enabled = false;
         saveSchedules(schedules);
         console.log(`Task ${taskName} disabled successfully.`);
-      });
+      } catch (error) {
+        console.error(`Error disabling task ${taskName}: ${error.message}`);
+        return;
+      }
     } else {
       disableCronTask(taskName);
+
       schedule.enabled = false;
       saveSchedules(schedules);
     }
@@ -441,40 +465,40 @@ export const bridgeApi = {
 
   enableAll: () => {
     const schedules = loadSchedules();
-    schedules.forEach((schedule) => {
+    for (const schedule of schedules) {
       if (isWindows) {
-        exec(`schtasks /change /tn ${schedule.taskName} /enable`, (error) => {
-          if (error) {
-            console.error(
-              `Error enabling task ${schedule.taskName}: ${error.message}`
-            );
-          }
-        });
+        try {
+          execAsync(`schtasks /change /tn ${schedule.taskName} /enable`);
+        } catch (error) {
+          console.error(
+            `Error enabling task ${schedule.taskName}: ${error.message}`
+          );
+        }
       } else {
         enableCronTask(schedule.taskName);
       }
       schedule.enabled = true;
-    });
+    }
     saveSchedules(schedules);
     console.log("All tasks enabled successfully.");
   },
 
-  disableAll: () => {
+  disableAll: async () => {
     const schedules = loadSchedules();
-    schedules.forEach((schedule) => {
+    for (const schedule of schedules) {
       if (isWindows) {
-        exec(`schtasks /change /tn ${schedule.taskName} /disable`, (error) => {
-          if (error) {
-            console.error(
-              `Error disabling task ${schedule.taskName}: ${error.message}`
-            );
-          }
-        });
+        try {
+          await execAsync(`schtasks /change /tn ${schedule.taskName} /disable`);
+        } catch (error) {
+          console.error(
+            `Error disabling task ${schedule.taskName}: ${error.message}`
+          );
+        }
       } else {
         disableCronTask(schedule.taskName);
       }
       schedule.enabled = false;
-    });
+    }
     saveSchedules(schedules);
     console.log("All tasks disabled successfully.");
   },

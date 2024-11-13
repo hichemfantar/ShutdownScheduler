@@ -4,6 +4,14 @@ module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      // appRegion: {
+      //   drag: {
+      //     "-webkit-app-region": "drag",
+      //   },
+      //   noDrag: {
+      //     "-webkit-app-region": "no-drag",
+      //   },
+      // },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -53,5 +61,18 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar")],
+  plugins: [
+    function ({ addUtilities }) {
+      addUtilities({
+        ".app-region-drag": {
+          "-webkit-app-region": "drag",
+        },
+        ".app-region-no-drag": {
+          "-webkit-app-region": "no-drag",
+        },
+      });
+    },
+    require("tailwindcss-animate"),
+    require("tailwind-scrollbar"),
+  ],
 };

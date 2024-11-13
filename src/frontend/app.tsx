@@ -261,7 +261,7 @@ export function App() {
                     delayInMinutes: scheduleInMinutes,
                     delayInHours: scheduleInHours,
                     delayInDays: scheduleInDays,
-                    onSucess: () => {
+                    onSuccess: () => {
                       update();
                     },
                   });
@@ -316,47 +316,54 @@ export function App() {
                 .listShutdownSchedules()
                 .slice()
                 .reverse()
-                .map(({ timestamp, delayInSeconds, taskName, enabled }) => (
-                  <div
-                    key={timestamp}
-                    className="flex items-center justify-between space-x-2"
-                  >
-                    <Label
-                      htmlFor={taskName}
-                      className="flex flex-col space-y-1"
+                .map(
+                  ({ timestamp, delayInSeconds, taskName, enabled, jobId }) => (
+                    <div
+                      key={timestamp}
+                      className="flex items-center justify-between space-x-2"
                     >
-                      <span>
-                        Shutdown scheduled at{" "}
-                        {new Date(timestamp).toLocaleString()}
-                      </span>
-                      <span className="font-normal leading-snug text-muted-foreground">
-                        Delay in seconds: {delayInSeconds}
-                      </span>
-                    </Label>
-                    <div className="flex items-center gap-4">
-                      <Switch
-                        id="necessary"
-                        checked={enabled}
-                        onCheckedChange={() => {
-                          if (!enabled) {
-                            window.bridge.enableTask(taskName);
-                          } else window.bridge.disableTask(taskName);
-                          update();
-                        }}
-                      />
-                      <Button
-                        onClick={() => {
-                          window.bridge.cancelShutdownTask(taskName);
-                          update();
-                        }}
-                        size="icon"
-                        variant="ghost"
+                      <Label
+                        htmlFor={taskName}
+                        className="flex flex-col space-y-1"
                       >
-                        <Trash2Icon />
-                      </Button>
+                        <span>
+                          Shutdown scheduled at{" "}
+                          {new Date(timestamp).toLocaleString()}
+                        </span>
+                        <span className="font-normal leading-snug text-muted-foreground">
+                          Delay in seconds: {delayInSeconds}
+                        </span>
+                      </Label>
+                      <div className="flex items-center gap-4">
+                        <Switch
+                          id={taskName}
+                          checked={enabled}
+                          onCheckedChange={() => {
+                            if (!enabled) {
+                              window.bridge.enableTask(taskName);
+                            } else {
+                              window.bridge.disableTask(taskName);
+                            }
+                            update();
+                          }}
+                        />
+                        <Button
+                          onClick={async () => {
+                            await window.bridge.cancelShutdownTask(
+                              taskName,
+                              jobId
+                            );
+                            update();
+                          }}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <Trash2Icon />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
             </CardContent>
             {/* <CardFooter>
               <Button variant="outline" className="w-full">
@@ -366,13 +373,12 @@ export function App() {
           </Card>
         </div>
       </div>
-      <div
-        id="ddrag"
-        style={{
-          WebkitAppRegion: "drag",
-        }}
-        className="fixed top-0 h-6 w-full"
-      ></div>
+      {/* <div
+        // style={{
+        //   WebkitAppRegion: "drag",
+        // }}
+        className="fixed top-0 h-6 w-full app-region-drag"
+      ></div> */}
     </>
   );
 }

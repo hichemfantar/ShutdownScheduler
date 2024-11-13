@@ -9,6 +9,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* @layer utilities {
+  .app-region-drag {
+    -webkit-app-region: "drag";
+  }
+  .app-region-no-drag {
+    -webkit-app-region: "no-drag";
+  }
+} */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -93,5 +103,5 @@
 html,
 body,
 #root {
-  @apply h-full;
+  @apply min-h-full;
 }

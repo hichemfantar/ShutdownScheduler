@@ -22,37 +22,58 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { LoaderIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import React, { useState } from "react";
-import { useUpdate } from "react-use";
+import { queryClient } from ".";
 
+window.bridge.isDev().then((isDev) => {
+  console.log("isDev", isDev);
+});
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 
 export function App() {
-  const update = useUpdate();
   const { toast } = useToast();
+  const getTasksQuery = useQuery({
+    queryKey: ["tasks"],
+    queryFn: window.bridge.listShutdownSchedules,
+  });
+
   const deleteAllTasksMutation = useMutation({
     mutationFn: window.bridge.deleteAllTasks,
-    // onSuccess: () => {
-    //   // Invalidate and refetch
-    //   queryClient.invalidateQueries({ queryKey: ['todos'] })
-    // },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
   const createTaskMutation = useMutation({
     mutationFn: window.bridge.createTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
   const deleteTaskMutation = useMutation({
     mutationFn: window.bridge.deleteTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
   const enableTaskMutation = useMutation({
     mutationFn: window.bridge.enableTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
   const disableTaskMutation = useMutation({
     mutationFn: window.bridge.disableTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
   const disableAllTasksMutation = useMutation({
     mutationFn: window.bridge.disableAllTasks,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
   });
 
   const [selectedAction, setSelectedAction] = useState<"shutdown" | "reboot">(
@@ -92,8 +113,6 @@ export function App() {
   };
 
   const selectedDays = days.filter((d) => d.selected).map((d) => d.day);
-
-  const taskList = window.bridge.listShutdownSchedules().slice().reverse();
 
   return (
     <>
@@ -323,7 +342,7 @@ export function App() {
                     disabled={
                       deleteAllTasksMutation.isPending ||
                       createTaskMutation.isPending ||
-                      taskList.length === 0
+                      (getTasksQuery.data && getTasksQuery.data.length === 0)
                     }
                     onClick={async () => {
                       await deleteAllTasksMutation.mutateAsync();
@@ -350,91 +369,92 @@ export function App() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
-              {taskList.length === 0 && (
+              {getTasksQuery.data && getTasksQuery.data.length === 0 && (
                 <div className="flex items-center justify-center">
                   <span className="text-muted-foreground">
                     No scheduled tasks found.
                   </span>
                 </div>
               )}
-              {taskList.map(
-                ({
-                  action,
-                  timestamp,
-                  taskName,
-                  enabled,
-                  jobId,
-                  daysOfWeek,
-                  scheduleType,
-                }) => (
-                  <React.Fragment key={timestamp}>
-                    <div className="flex items-center justify-between gap-x-2">
-                      <div className="flex flex-col gap-2">
-                        <span>
-                          {
+              {getTasksQuery.data &&
+                getTasksQuery.data.map(
+                  ({
+                    action,
+                    timestamp,
+                    taskName,
+                    enabled,
+                    jobId,
+                    daysOfWeek,
+                    scheduleType,
+                  }) => (
+                    <React.Fragment key={timestamp}>
+                      <div className="flex items-center justify-between gap-x-2">
+                        <div className="flex flex-col gap-2">
+                          <span>
                             {
-                              shutdown: "Shutdown",
-                              reboot: "Restart",
-                            }[action]
-                          }{" "}
-                          scheduled{" "}
-                          <Badge variant="outline">{scheduleType}</Badge> at{" "}
-                          {new Date(timestamp).toLocaleString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {/* <span className="font-normal leading-snug text-muted-foreground">
+                              {
+                                shutdown: "Shutdown",
+                                reboot: "Restart",
+                              }[action]
+                            }{" "}
+                            scheduled{" "}
+                            <Badge variant="outline">{scheduleType}</Badge> at{" "}
+                            {new Date(timestamp).toLocaleString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {/* <span className="font-normal leading-snug text-muted-foreground">
                               Delay in seconds: {delayInSeconds}
                             </span> */}
-                          {scheduleType === "weekly" &&
-                            daysOfWeek.length > 0 && (
-                              <div className="flex gap-2">
-                                {daysOfWeek.map((day) => (
-                                  <Badge variant="default">{day}</Badge>
-                                ))}
-                              </div>
-                            )}
+                            {scheduleType === "weekly" &&
+                              daysOfWeek.length > 0 && (
+                                <div className="flex gap-2">
+                                  {daysOfWeek.map((day) => (
+                                    <Badge variant="default">{day}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          {false && (
+                            <Switch
+                              id={taskName}
+                              checked={enabled}
+                              onCheckedChange={async () => {
+                                if (!enabled) {
+                                  await enableTaskMutation.mutateAsync({
+                                    taskName,
+                                  });
+                                } else {
+                                  await disableTaskMutation.mutateAsync({
+                                    taskName,
+                                  });
+                                }
+                              }}
+                            />
+                          )}
+                          <Button
+                            onClick={async () => {
+                              await deleteTaskMutation.mutateAsync({
+                                taskName,
+                                jobId,
+                              });
+                            }}
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <Trash2Icon />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        {false && (
-                          <Switch
-                            id={taskName}
-                            checked={enabled}
-                            onCheckedChange={async () => {
-                              if (!enabled) {
-                                await enableTaskMutation.mutateAsync({
-                                  taskName,
-                                });
-                              } else {
-                                await disableTaskMutation.mutateAsync({
-                                  taskName,
-                                });
-                              }
-                            }}
-                          />
-                        )}
-                        <Button
-                          onClick={async () => {
-                            await deleteTaskMutation.mutateAsync({
-                              taskName,
-                              jobId,
-                            });
-                          }}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          <Trash2Icon />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="border-b last:border-b-0 last:hidden"></div>
-                  </React.Fragment>
-                )
-              )}
+                      <div className="border-b last:border-b-0 last:hidden"></div>
+                    </React.Fragment>
+                  )
+                )}
             </CardContent>
             {/* <CardFooter>
               <Button variant="outline" className="w-full">

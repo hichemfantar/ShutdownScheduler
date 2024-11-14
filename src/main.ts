@@ -1,9 +1,9 @@
-import { app, BrowserWindow, clipboard, ipcMain, nativeTheme } from "electron";
-import path from "path";
+import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
 import started from "electron-squirrel-startup";
+import path from "path";
 
-// declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-// declare const MAIN_WINDOW_VITE_NAME: string;
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -64,6 +64,24 @@ ipcMain.handle("dark-mode:system", () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", createWindow);
+app.whenReady().then(() => {
+  const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
+  ipcMain.handle("isDev", (e, args) => [
+    !!MAIN_WINDOW_VITE_DEV_SERVER_URL,
+    args,
+  ]);
+  ipcMain.handle("getSaveLocation", () => {
+    return path.join(
+      isDev ? __dirname : app.getPath("userData"),
+      "shutdownSchedules.json"
+    );
+  });
+  // ipcMain.handle("createTask", async (e, args) => {
+  //   console.log(args);
+
+  //   return createTask(args);
+  // });
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

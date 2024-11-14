@@ -7,9 +7,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const container = document.getElementById("root");
 
+export const queryClient = new QueryClient();
+
 if (container) {
   const root = createRoot(container);
-  const queryClient = new QueryClient();
 
   root.render(
     <QueryClientProvider client={queryClient}>

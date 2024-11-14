@@ -152,8 +152,8 @@ export const bridgeApi = {
     }));
   },
 
-  setShutdownTimerTask: async ({
-    delayInSeconds,
+  createTask: async ({
+    delayInSeconds = 0,
     delayInMinutes = 0,
     delayInHours = 0,
     delayInDays = 0,
@@ -163,10 +163,10 @@ export const bridgeApi = {
     enabled = true,
     onSuccess,
   }: {
-    delayInSeconds: number;
-    delayInMinutes?: number;
-    delayInHours?: number;
-    delayInDays?: number;
+    delayInSeconds?: number;
+    delayInMinutes: number;
+    delayInHours: number;
+    delayInDays: number;
     action: "shutdown" | "reboot";
     scheduleType: "once" | "daily" | "weekly";
     daysOfWeek?: string[];
@@ -210,7 +210,7 @@ export const bridgeApi = {
 
       try {
         await execAsync(schtasksCommand);
-        console.log(`${action} timer set for ${delayInSeconds} seconds`);
+        console.log(`${action} timer set for ${scheduledTime}`);
         const schedules = loadSchedules();
         schedules.push({
           action,
@@ -321,9 +321,7 @@ export const bridgeApi = {
           await execAsync(`(crontab -l; echo "${cronEntry}") | crontab -`, {
             shell: "/bin/bash",
           });
-          console.log(
-            `${scheduleType} cron job set for ${delayInSeconds} seconds`
-          );
+          console.log(`${scheduleType} cron job set for ${scheduledTime}`);
           if (onSuccess) {
             const schedules = loadSchedules();
             schedules.push({
@@ -348,7 +346,8 @@ export const bridgeApi = {
       }
     }
   },
-  cancelShutdownTask: async (taskName: string, jobId?: string) => {
+
+  deleteTask: async (taskName: string, jobId?: string) => {
     const schedules = loadSchedules();
     const taskIndex = schedules.findIndex(
       (schedule) => schedule.taskName === taskName
@@ -391,7 +390,7 @@ export const bridgeApi = {
     }
   },
 
-  cancelAllShutdowns: async () => {
+  deleteAllTasks: async () => {
     const schedules = loadSchedules();
     if (isWindows) {
       for (const { taskName } of schedules) {
@@ -481,7 +480,7 @@ export const bridgeApi = {
     }
   },
 
-  enableAll: () => {
+  enableAllTasks: () => {
     const schedules = loadSchedules();
     for (const schedule of schedules) {
       if (isWindows) {
@@ -501,7 +500,7 @@ export const bridgeApi = {
     console.log("All tasks enabled successfully.");
   },
 
-  disableAll: async () => {
+  disableAllTasks: async () => {
     const schedules = loadSchedules();
     for (const schedule of schedules) {
       if (isWindows) {

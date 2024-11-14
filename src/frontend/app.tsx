@@ -51,8 +51,6 @@ export function App() {
     { day: "Sun", selected: false },
   ]);
 
-  const [scheduleInSeconds, setScheduleInSeconds] = useState(0);
-
   const [scheduleInMinutes, setScheduleInMinutes] = useState(1);
   const [scheduleInHours, setScheduleInHours] = useState(0);
   const [scheduleInDays, setScheduleInDays] = useState(0);
@@ -265,9 +263,8 @@ export function App() {
             <div className="justify-end flex gap-2">
               <Button
                 onClick={() => {
-                  window.bridge.setShutdownTimerTask({
+                  window.bridge.createTask({
                     action: selectedAction,
-                    delayInSeconds: scheduleInSeconds,
                     scheduleType: frequency,
                     daysOfWeek: selectedDays,
                     delayInMinutes: scheduleInMinutes,
@@ -295,7 +292,7 @@ export function App() {
                 <div className="justify-end flex gap-2">
                   <Button
                     onClick={() => {
-                      window.bridge.cancelAllShutdowns();
+                      window.bridge.deleteAllTasks();
                       update();
                     }}
                     variant="destructive"
@@ -303,16 +300,16 @@ export function App() {
                     <Trash2Icon />
                     Delete All
                   </Button>
-                  <Button
+                  {/* <Button
                     onClick={() => {
-                      window.bridge.disableAll();
+                      window.bridge.disableAllTasks();
                       update();
                     }}
                     variant="secondary"
                   >
                     <BanIcon />
                     Disable All
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </CardHeader>
@@ -386,10 +383,7 @@ export function App() {
                           />
                           <Button
                             onClick={async () => {
-                              await window.bridge.cancelShutdownTask(
-                                taskName,
-                                jobId
-                              );
+                              await window.bridge.deleteTask(taskName, jobId);
                               update();
                             }}
                             size="icon"

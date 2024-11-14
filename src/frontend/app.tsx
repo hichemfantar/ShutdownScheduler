@@ -400,21 +400,23 @@ export function App() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Switch
-                          id={taskName}
-                          checked={enabled}
-                          onCheckedChange={async () => {
-                            if (!enabled) {
-                              await enableTaskMutation.mutateAsync({
-                                taskName,
-                              });
-                            } else {
-                              await disableTaskMutation.mutateAsync({
-                                taskName,
-                              });
-                            }
-                          }}
-                        />
+                        {false && (
+                          <Switch
+                            id={taskName}
+                            checked={enabled}
+                            onCheckedChange={async () => {
+                              if (!enabled) {
+                                await enableTaskMutation.mutateAsync({
+                                  taskName,
+                                });
+                              } else {
+                                await disableTaskMutation.mutateAsync({
+                                  taskName,
+                                });
+                              }
+                            }}
+                          />
+                        )}
                         <Button
                           onClick={async () => {
                             await deleteTaskMutation.mutateAsync({

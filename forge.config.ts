@@ -2,7 +2,7 @@ import type { ForgeConfig } from "@electron-forge/shared-types";
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { MakerDeb } from "@electron-forge/maker-deb";
-// import { MakerDMG } from "@electron-forge/maker-dmg";
+import { MakerDMG } from "@electron-forge/maker-dmg";
 // import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
@@ -37,7 +37,7 @@ const config: ForgeConfig = {
         icon: path.join(process.cwd(), "public", "assets", "icon.png"),
       },
     }),
-    // new MakerDMG(),
+    new MakerDMG(),
   ],
   hooks: {
     // generateAssets: async (forgeConfig, resources) => {

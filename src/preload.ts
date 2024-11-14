@@ -425,9 +425,20 @@ export const bridgeApi = {
       try {
         // delete all cron jobs
         const stdout = await execAsync(`crontab -l`);
+        let skipNext = false;
         const updatedCron = stdout
           .split("\n")
-          .filter((line) => !line.startsWith(`# ${taskNamePrefix}_`))
+          .filter((line) => {
+            if (skipNext) {
+              skipNext = false; // Skip this line and reset the flag
+              return false;
+            }
+            if (line.startsWith(`# ${taskNamePrefix}_`)) {
+              skipNext = true; // Set flag to skip the following line
+              return false;
+            }
+            return true; // Keep lines that don’t match the condition
+          })
           .join("\n");
 
         try {

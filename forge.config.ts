@@ -68,32 +68,34 @@ const config: ForgeConfig = {
         });
       };
 
-      try {
-        // Run the codesign verification command
-        await runCommand(
-          `codesign --verify --deep --strict --verbose=2 "${appPath}"`
-        );
-        console.info("Codesign verification succeeded.");
-      } catch (verificationError) {
-        console.error(
-          "Codesign verification failed:",
-          verificationError.stderr
-        );
-
-        // Attempt to re-sign the application if verification fails
+      if (os.platform() === "darwin") {
         try {
-          console.info("Attempting to re-sign the application...");
-          await runCommand(`codesign --force --deep --sign - "${appPath}"`);
-          console.info("Re-signing succeeded.");
-
-          // Re-run the verification after re-signing
+          // Run the codesign verification command
           await runCommand(
             `codesign --verify --deep --strict --verbose=2 "${appPath}"`
           );
-          console.info("Re-verification succeeded after re-signing.");
-        } catch (signingError) {
-          console.error("Re-signing failed:", signingError.stderr);
-          throw new Error("Re-signing failed.");
+          console.info("Codesign verification succeeded.");
+        } catch (verificationError) {
+          console.error(
+            "Codesign verification failed:",
+            verificationError.stderr
+          );
+
+          // Attempt to re-sign the application if verification fails
+          try {
+            console.info("Attempting to re-sign the application...");
+            await runCommand(`codesign --force --deep --sign - "${appPath}"`);
+            console.info("Re-signing succeeded.");
+
+            // Re-run the verification after re-signing
+            await runCommand(
+              `codesign --verify --deep --strict --verbose=2 "${appPath}"`
+            );
+            console.info("Re-verification succeeded after re-signing.");
+          } catch (signingError) {
+            console.error("Re-signing failed:", signingError.stderr);
+            throw new Error("Re-signing failed.");
+          }
         }
       }
     },

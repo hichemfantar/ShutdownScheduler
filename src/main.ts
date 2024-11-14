@@ -2,6 +2,9 @@ import { app, BrowserWindow, clipboard, ipcMain, nativeTheme } from "electron";
 import path from "path";
 import started from "electron-squirrel-startup";
 
+// declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+// declare const MAIN_WINDOW_VITE_NAME: string;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
@@ -19,7 +22,7 @@ const createWindow = () => {
     width: 1280,
     height: 720,
     fullscreenable: false,
-    autoHideMenuBar: !!MAIN_WINDOW_VITE_DEV_SERVER_URL ? false : true,
+    autoHideMenuBar: MAIN_WINDOW_VITE_DEV_SERVER_URL ? false : true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       sandbox: false,

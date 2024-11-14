@@ -25,10 +25,18 @@ const config: ForgeConfig = {
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      setupIcon: path.join(process.cwd(), "public", "assets", "icon.ico"),
+      iconUrl:
+        "https://raw.githubusercontent.com/hichemfantar/shutdown-scheduler/main/public/assets/icon.ico",
+    }),
     new MakerZIP({}, ["darwin"]),
     // new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerDeb({
+      options: {
+        icon: path.join(process.cwd(), "public", "assets", "icon.png"),
+      },
+    }),
     // new MakerDMG(),
   ],
   hooks: {

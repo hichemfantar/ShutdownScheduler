@@ -9,7 +9,8 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:import/electron",
-    "plugin:import/typescript"
+    "plugin:import/typescript",
+    "plugin:@tanstack/query/recommended"
   ],
   "parser": "@typescript-eslint/parser"
 }

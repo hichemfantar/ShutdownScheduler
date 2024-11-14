@@ -135,9 +135,9 @@ const disableCronTask = async (taskName: string) => {
 const deleteAtTask = async (jobId: string) => {
   try {
     await execAsync(`atrm ${jobId}`);
-    console.log(`At job with ID ${jobId} disabled.`);
+    console.log(`At job with ID ${jobId} deleted.`);
   } catch (error) {
-    console.error(`Error disabling at job with ID ${jobId}: ${error.message}`);
+    console.error(`Error deleting at job with ID ${jobId}: ${error.message}`);
   }
 };
 
@@ -280,21 +280,22 @@ export const bridgeApi = {
 
           console.log(`Job scheduled with ID: ${jobId}`);
           console.log(`${action} set for once at ${atTime}`);
-          if (onSuccess) {
-            const schedules = loadSchedules();
-            schedules.push({
-              action,
-              taskName,
-              timestamp,
-              delayInSeconds,
-              scheduledTime,
-              enabled,
-              scheduleType,
-              daysOfWeek,
-              jobId,
-            });
-            saveSchedules(schedules);
 
+          const schedules = loadSchedules();
+          schedules.push({
+            action,
+            taskName,
+            timestamp,
+            delayInSeconds,
+            scheduledTime,
+            enabled,
+            scheduleType,
+            daysOfWeek,
+            jobId,
+          });
+          saveSchedules(schedules);
+
+          if (onSuccess) {
             onSuccess();
           }
         } catch (error) {
@@ -322,20 +323,21 @@ export const bridgeApi = {
             shell: "/bin/bash",
           });
           console.log(`${scheduleType} cron job set for ${scheduledTime}`);
-          if (onSuccess) {
-            const schedules = loadSchedules();
-            schedules.push({
-              action,
-              taskName,
-              timestamp,
-              delayInSeconds,
-              scheduledTime,
-              enabled,
-              scheduleType,
-              daysOfWeek,
-            });
-            saveSchedules(schedules);
 
+          const schedules = loadSchedules();
+          schedules.push({
+            action,
+            taskName,
+            timestamp,
+            delayInSeconds,
+            scheduledTime,
+            enabled,
+            scheduleType,
+            daysOfWeek,
+          });
+          saveSchedules(schedules);
+
+          if (onSuccess) {
             onSuccess();
           }
         } catch (error) {
@@ -347,7 +349,13 @@ export const bridgeApi = {
     }
   },
 
-  deleteTask: async (taskName: string, jobId?: string) => {
+  deleteTask: async ({
+    taskName,
+    jobId,
+  }: {
+    taskName: string;
+    jobId?: string;
+  }) => {
     const schedules = loadSchedules();
     const taskIndex = schedules.findIndex(
       (schedule) => schedule.taskName === taskName
@@ -404,7 +412,18 @@ export const bridgeApi = {
         }
       }
     } else {
+      {
+        // delete all at tasks
+        const schedules = loadSchedules();
+        for (const { jobId } of schedules) {
+          if (jobId) {
+            await deleteAtTask(jobId);
+          }
+        }
+      }
+
       try {
+        // delete all cron jobs
         const stdout = await execAsync(`crontab -l`);
         const updatedCron = stdout
           .split("\n")
@@ -427,7 +446,7 @@ export const bridgeApi = {
     saveSchedules([]);
   },
 
-  enableTask: async (taskName: string) => {
+  enableTask: async ({ taskName }: { taskName: string }) => {
     const schedules = loadSchedules();
     const schedule = schedules.find((s) => s.taskName === taskName);
 
@@ -453,7 +472,7 @@ export const bridgeApi = {
     }
   },
 
-  disableTask: async (taskName: string) => {
+  disableTask: async ({ taskName }: { taskName: string }) => {
     const schedules = loadSchedules();
     const schedule = schedules.find((s) => s.taskName === taskName);
 

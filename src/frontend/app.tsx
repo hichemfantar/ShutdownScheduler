@@ -1,6 +1,15 @@
+import { ModeToggle } from "@/components/theme/mode-toggle";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import React, { useEffect, useState } from "react";
-import { useUpdate } from "react-use";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,27 +20,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { ModeToggle } from "@/components/theme/mode-toggle";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BanIcon, ListPlus, PlusIcon, Trash2Icon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
+import { LoaderIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import React, { useState } from "react";
+import { useUpdate } from "react-use";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 
 export function App() {
   const update = useUpdate();
   const { toast } = useToast();
+  const deleteAllTasksMutation = useMutation({
+    mutationFn: window.bridge.deleteAllTasks,
+    // onSuccess: () => {
+    //   // Invalidate and refetch
+    //   queryClient.invalidateQueries({ queryKey: ['todos'] })
+    // },
+  });
+  const createTaskMutation = useMutation({
+    mutationFn: window.bridge.createTask,
+  });
+  const deleteTaskMutation = useMutation({
+    mutationFn: window.bridge.deleteTask,
+  });
+  const enableTaskMutation = useMutation({
+    mutationFn: window.bridge.enableTask,
+  });
+  const disableTaskMutation = useMutation({
+    mutationFn: window.bridge.disableTask,
+  });
+  const disableAllTasksMutation = useMutation({
+    mutationFn: window.bridge.disableAllTasks,
+  });
 
   const [selectedAction, setSelectedAction] = useState<"shutdown" | "reboot">(
     "shutdown"
@@ -70,6 +92,8 @@ export function App() {
   };
 
   const selectedDays = days.filter((d) => d.selected).map((d) => d.day);
+
+  const taskList = window.bridge.listShutdownSchedules().slice().reverse();
 
   return (
     <>
@@ -262,21 +286,26 @@ export function App() {
 
             <div className="justify-end flex gap-2">
               <Button
-                onClick={() => {
-                  window.bridge.createTask({
+                disabled={
+                  createTaskMutation.isPending ||
+                  deleteAllTasksMutation.isPending
+                }
+                onClick={async () => {
+                  await createTaskMutation.mutateAsync({
                     action: selectedAction,
                     scheduleType: frequency,
                     daysOfWeek: selectedDays,
                     delayInMinutes: scheduleInMinutes,
                     delayInHours: scheduleInHours,
                     delayInDays: scheduleInDays,
-                    onSuccess: () => {
-                      update();
-                    },
                   });
                 }}
               >
-                <PlusIcon />
+                {createTaskMutation.isPending ? (
+                  <LoaderIcon className="animate-spin" />
+                ) : (
+                  <PlusIcon />
+                )}
                 Create
               </Button>
             </div>
@@ -291,19 +320,26 @@ export function App() {
                 </div>
                 <div className="justify-end flex gap-2">
                   <Button
-                    onClick={() => {
-                      window.bridge.deleteAllTasks();
-                      update();
+                    disabled={
+                      deleteAllTasksMutation.isPending ||
+                      createTaskMutation.isPending ||
+                      taskList.length === 0
+                    }
+                    onClick={async () => {
+                      await deleteAllTasksMutation.mutateAsync();
                     }}
                     variant="destructive"
                   >
-                    <Trash2Icon />
+                    {deleteAllTasksMutation.isPending ? (
+                      <LoaderIcon className="animate-spin" />
+                    ) : (
+                      <Trash2Icon />
+                    )}
                     Delete All
                   </Button>
                   {/* <Button
-                    onClick={() => {
-                      window.bridge.disableAllTasks();
-                      update();
+                    onClick={async () => {
+                      await disableAllTasksMutation.mutateAsync();
                     }}
                     variant="secondary"
                   >
@@ -314,89 +350,89 @@ export function App() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
-              {window.bridge.listShutdownSchedules().length === 0 && (
+              {taskList.length === 0 && (
                 <div className="flex items-center justify-center">
                   <span className="text-muted-foreground">
                     No scheduled tasks found.
                   </span>
                 </div>
               )}
-              {window.bridge
-                .listShutdownSchedules()
-                .slice()
-                .reverse()
-                .map(
-                  ({
-                    action,
-                    timestamp,
-                    delayInSeconds,
-                    taskName,
-                    enabled,
-                    jobId,
-                    daysOfWeek,
-                    scheduleType,
-                  }) => (
-                    <React.Fragment key={timestamp}>
-                      <div className="flex items-center justify-between gap-x-2">
-                        <div className="flex flex-col gap-2">
-                          <span>
+              {taskList.map(
+                ({
+                  action,
+                  timestamp,
+                  taskName,
+                  enabled,
+                  jobId,
+                  daysOfWeek,
+                  scheduleType,
+                }) => (
+                  <React.Fragment key={timestamp}>
+                    <div className="flex items-center justify-between gap-x-2">
+                      <div className="flex flex-col gap-2">
+                        <span>
+                          {
                             {
-                              {
-                                shutdown: "Shutdown",
-                                reboot: "Restart",
-                              }[action]
-                            }{" "}
-                            scheduled{" "}
-                            <Badge variant="outline">{scheduleType}</Badge> at{" "}
-                            {new Date(timestamp).toLocaleString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {/* <span className="font-normal leading-snug text-muted-foreground">
+                              shutdown: "Shutdown",
+                              reboot: "Restart",
+                            }[action]
+                          }{" "}
+                          scheduled{" "}
+                          <Badge variant="outline">{scheduleType}</Badge> at{" "}
+                          {new Date(timestamp).toLocaleString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {/* <span className="font-normal leading-snug text-muted-foreground">
                               Delay in seconds: {delayInSeconds}
                             </span> */}
-                            {scheduleType === "weekly" &&
-                              daysOfWeek.length > 0 && (
-                                <div className="flex gap-2">
-                                  {daysOfWeek.map((day) => (
-                                    <Badge variant="default">{day}</Badge>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Switch
-                            id={taskName}
-                            checked={enabled}
-                            onCheckedChange={() => {
-                              if (!enabled) {
-                                window.bridge.enableTask(taskName);
-                              } else {
-                                window.bridge.disableTask(taskName);
-                              }
-                              update();
-                            }}
-                          />
-                          <Button
-                            onClick={async () => {
-                              await window.bridge.deleteTask(taskName, jobId);
-                              update();
-                            }}
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <Trash2Icon />
-                          </Button>
+                          {scheduleType === "weekly" &&
+                            daysOfWeek.length > 0 && (
+                              <div className="flex gap-2">
+                                {daysOfWeek.map((day) => (
+                                  <Badge variant="default">{day}</Badge>
+                                ))}
+                              </div>
+                            )}
                         </div>
                       </div>
-                      <div className="border-b last:border-b-0 last:hidden"></div>
-                    </React.Fragment>
-                  )
-                )}
+                      <div className="flex items-center gap-4">
+                        <Switch
+                          id={taskName}
+                          checked={enabled}
+                          onCheckedChange={async () => {
+                            if (!enabled) {
+                              await enableTaskMutation.mutateAsync({
+                                taskName,
+                              });
+                            } else {
+                              await disableTaskMutation.mutateAsync({
+                                taskName,
+                              });
+                            }
+                          }}
+                        />
+                        <Button
+                          onClick={async () => {
+                            await deleteTaskMutation.mutateAsync({
+                              taskName,
+                              jobId,
+                            });
+                          }}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <Trash2Icon />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="border-b last:border-b-0 last:hidden"></div>
+                  </React.Fragment>
+                )
+              )}
             </CardContent>
             {/* <CardFooter>
               <Button variant="outline" className="w-full">

@@ -328,9 +328,7 @@ const createTask = async ({
       const cronEntry = `# ${taskName}\n${cronJob}`;
 
       try {
-        await execAsync(`(crontab -l; echo "${cronEntry}") | crontab -`, {
-          shell: "/bin/bash",
-        });
+        await execAsync(`(crontab -l; echo "${cronEntry}") | crontab -`);
         console.log(`${scheduleType} cron job set for ${scheduledTime}`);
 
         const schedules = await loadSchedules();

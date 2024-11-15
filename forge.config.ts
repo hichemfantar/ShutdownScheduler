@@ -32,7 +32,7 @@ const config: ForgeConfig = {
       iconUrl:
         "https://raw.githubusercontent.com/hichemfantar/shutdown-scheduler/main/public/assets/icon.ico",
     }),
-    new MakerZIP({}, ["darwin"]),
+    // new MakerZIP({}, ["darwin"]),
     // new MakerRpm({}),
     new MakerDeb({
       options: {

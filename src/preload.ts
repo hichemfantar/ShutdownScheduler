@@ -576,6 +576,34 @@ export const bridgeApi = {
   disableAllTasks,
 
   isDev: () => ipcRenderer.invoke("isDev", ["hey"]),
+  runCommandInTerminal: async (command: string) => {
+    // The command you want to run in the Terminal
+    // const terminalCommand = 'echo \\"Hello, World!\\"';
+
+    // AppleScript to open Terminal and execute the command
+    const appleScript = `
+tell application "Terminal"
+    activate
+    set currentTab to do script "${command}"
+end tell
+`;
+    // tell application "Terminal"
+    //     activate
+    //     if (count of windows) is 0 then
+    //         do script "" -- Open a new window if no windows are open
+    //     else
+    //         tell application "System Events" to keystroke "t" using {command down} -- Open a new tab
+    //     end if
+
+    //     do script "${command}" in front window
+    // end tell
+    // `;
+
+    // do script \\"${terminalCommand}\\"
+    // do script "echo \\"Hello, World!\\""
+
+    return await execAsync(`osascript -e '${appleScript}'`);
+  },
 
   // createTask: (args) => ipcRenderer.invoke("createTask", args),
 };

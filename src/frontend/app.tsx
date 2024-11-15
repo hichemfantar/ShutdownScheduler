@@ -8,6 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,10 +28,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { LoaderIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  CopyIcon,
+  InfoIcon,
+  LoaderIcon,
+  PlusIcon,
+  TerminalIcon,
+  Trash2Icon,
+} from "lucide-react";
 import React, { useState } from "react";
 import { queryClient } from ".";
 
@@ -114,6 +134,10 @@ export function App() {
 
   const selectedDays = days.filter((d) => d.selected).map((d) => d.day);
 
+  const sortedTasks = getTasksQuery.data
+    ? getTasksQuery.data.sort((a, b) => a.timestamp - b.timestamp)
+    : [];
+
   return (
     <>
       {/* use this for center */}
@@ -124,7 +148,153 @@ export function App() {
             <div>
               <h1 className="text-3xl font-bold">Schedule a task</h1>
             </div>
-            <ModeToggle />
+            <div className="flex items-center gap-2">
+              <ModeToggle />
+              <Dialog defaultOpen>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <InfoIcon />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent
+                  onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                  }}
+                >
+                  <DialogHeader>
+                    <DialogTitle>About</DialogTitle>
+                    <DialogDescription>
+                      Shutdown Scheduler is a simple application that uses
+                      system utilities{" "}
+                      <a
+                        target="_blank"
+                        href="https://www.geeksforgeeks.org/crontab-in-linux-with-examples/"
+                        className=" underline"
+                      >
+                        Cron
+                      </a>{" "}
+                      and{" "}
+                      <a
+                        target="_blank"
+                        href="https://www.geeksforgeeks.org/at-command-in-linux-with-examples/"
+                        className=" underline"
+                      >
+                        at
+                      </a>{" "}
+                      for scheduling shutdown and restart tasks.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        Use the following commands in your Terminal to see the
+                        created tasks: <br />
+                      </p>
+                      <Label>List one time tasks</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="grid flex-1 gap-2">
+                          <Input value="$ at -l" readOnly />
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="px-3"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText("at -l");
+                                toast({
+                                  title: "Copied",
+                                  description:
+                                    "Command 'at -l' copied to clipboard.",
+                                });
+                              }}
+                            >
+                              <span className="sr-only">Copy</span>
+                              <CopyIcon />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy to Clipboard</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="px-3"
+                              onClick={async () => {
+                                await window.bridge.runCommandInTerminal(
+                                  "at -l"
+                                );
+                              }}
+                            >
+                              <TerminalIcon />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Run in Terminal</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <Label>List recurring tasks</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="grid flex-1 gap-2">
+                          <Input value="$ crontab -l" readOnly />
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="px-3"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(
+                                  "crontab -l"
+                                );
+                                toast({
+                                  title: "Copied",
+                                  description:
+                                    "Command 'crontab -l' copied to clipboard.",
+                                });
+                              }}
+                            >
+                              <span className="sr-only">Copy</span>
+                              <CopyIcon />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy to Clipboard</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="px-3"
+                              onClick={async () => {
+                                await window.bridge.runCommandInTerminal(
+                                  "crontab -l"
+                                );
+                              }}
+                            >
+                              <TerminalIcon />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Run in Terminal</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-8">
@@ -376,85 +546,89 @@ export function App() {
                   </span>
                 </div>
               )}
-              {getTasksQuery.data &&
-                getTasksQuery.data.map(
-                  ({
-                    action,
-                    timestamp,
-                    taskName,
-                    enabled,
-                    jobId,
-                    daysOfWeek,
-                    scheduleType,
-                  }) => (
-                    <React.Fragment key={timestamp}>
-                      <div className="flex items-center justify-between gap-x-2">
-                        <div className="flex flex-col gap-2">
-                          <span>
+              {sortedTasks.map(
+                ({
+                  action,
+                  timestamp,
+                  taskName,
+                  enabled,
+                  jobId,
+                  daysOfWeek,
+                  scheduleType,
+                }) => (
+                  <React.Fragment key={timestamp}>
+                    <div className="flex items-center justify-between gap-x-2">
+                      <div className="flex flex-col gap-2">
+                        <span>
+                          {
                             {
-                              {
-                                shutdown: "Shutdown",
-                                reboot: "Restart",
-                              }[action]
-                            }{" "}
-                            scheduled{" "}
-                            <Badge variant="outline">{scheduleType}</Badge> at{" "}
-                            {new Date(timestamp).toLocaleString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {/* <span className="font-normal leading-snug text-muted-foreground">
+                              shutdown: "Shutdown",
+                              reboot: "Restart",
+                            }[action]
+                          }{" "}
+                          scheduled{" "}
+                          <Badge variant="outline">{scheduleType}</Badge> at{" "}
+                          {new Date(timestamp).toLocaleString(
+                            [],
+                            scheduleType === "once"
+                              ? {}
+                              : {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {/* <span className="font-normal leading-snug text-muted-foreground">
                               Delay in seconds: {delayInSeconds}
                             </span> */}
-                            {scheduleType === "weekly" &&
-                              daysOfWeek.length > 0 && (
-                                <div className="flex gap-2">
-                                  {daysOfWeek.map((day) => (
-                                    <Badge variant="default">{day}</Badge>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {false && (
-                            <Switch
-                              id={taskName}
-                              checked={enabled}
-                              onCheckedChange={async () => {
-                                if (!enabled) {
-                                  await enableTaskMutation.mutateAsync({
-                                    taskName,
-                                  });
-                                } else {
-                                  await disableTaskMutation.mutateAsync({
-                                    taskName,
-                                  });
-                                }
-                              }}
-                            />
-                          )}
-                          <Button
-                            onClick={async () => {
-                              await deleteTaskMutation.mutateAsync({
-                                taskName,
-                                jobId,
-                              });
-                            }}
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <Trash2Icon />
-                          </Button>
+                          {scheduleType === "weekly" &&
+                            daysOfWeek.length > 0 && (
+                              <div className="flex gap-2">
+                                {daysOfWeek.map((day) => (
+                                  <Badge variant="default">{day}</Badge>
+                                ))}
+                              </div>
+                            )}
                         </div>
                       </div>
-                      <div className="border-b last:border-b-0 last:hidden"></div>
-                    </React.Fragment>
-                  )
-                )}
+                      <div className="flex items-center gap-4">
+                        {false && (
+                          <Switch
+                            id={taskName}
+                            checked={enabled}
+                            onCheckedChange={async () => {
+                              if (!enabled) {
+                                await enableTaskMutation.mutateAsync({
+                                  taskName,
+                                });
+                              } else {
+                                await disableTaskMutation.mutateAsync({
+                                  taskName,
+                                });
+                              }
+                            }}
+                          />
+                        )}
+                        <Button
+                          onClick={async () => {
+                            await deleteTaskMutation.mutateAsync({
+                              taskName,
+                              jobId,
+                            });
+                          }}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <Trash2Icon />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="border-b last:border-b-0 last:hidden"></div>
+                  </React.Fragment>
+                )
+              )}
             </CardContent>
             {/* <CardFooter>
               <Button variant="outline" className="w-full">

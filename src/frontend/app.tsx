@@ -47,9 +47,6 @@ import {
 import React, { useState } from "react";
 import { queryClient } from ".";
 
-window.bridge.isDev().then((isDev) => {
-  console.log("isDev", isDev);
-});
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 
 export function App() {
@@ -360,7 +357,6 @@ export function App() {
                     <div className="h-9 bg-gray-50/20 w-[1px]"></div>
                     <div className="flex items-center space-x-2">
                       <Switch
-                        // disabled
                         id="Tuesday"
                         checked={days.find((d) => d.day === "Tue")?.selected}
                         onCheckedChange={() => handleDaySelect("Tue")}
@@ -475,10 +471,7 @@ export function App() {
 
             <div className="justify-end flex gap-2">
               <Button
-                disabled={
-                  createTaskMutation.isPending ||
-                  deleteAllTasksMutation.isPending
-                }
+                disabled={!!queryClient.isMutating()}
                 onClick={async () => {
                   await createTaskMutation.mutateAsync({
                     action: selectedAction,
@@ -510,9 +503,7 @@ export function App() {
                 <div className="justify-end flex gap-2">
                   <Button
                     disabled={
-                      deleteAllTasksMutation.isPending ||
-                      createTaskMutation.isPending ||
-                      (getTasksQuery.data && getTasksQuery.data.length === 0)
+                      !!queryClient.isMutating() || !getTasksQuery.data?.length
                     }
                     onClick={async () => {
                       await deleteAllTasksMutation.mutateAsync();
@@ -539,7 +530,7 @@ export function App() {
               </div>
             </CardHeader>
             <CardContent className="grid gap-4">
-              {getTasksQuery.data && getTasksQuery.data.length === 0 && (
+              {getTasksQuery.data?.length === 0 && (
                 <div className="flex items-center justify-center">
                   <span className="text-muted-foreground">
                     No scheduled tasks found.
@@ -580,9 +571,6 @@ export function App() {
                           )}
                         </span>
                         <div className="flex items-center gap-2">
-                          {/* <span className="font-normal leading-snug text-muted-foreground">
-                              Delay in seconds: {delayInSeconds}
-                            </span> */}
                           {scheduleType === "weekly" &&
                             daysOfWeek.length > 0 && (
                               <div className="flex gap-2">
@@ -612,6 +600,7 @@ export function App() {
                           />
                         )}
                         <Button
+                          disabled={!!queryClient.isMutating()}
                           onClick={async () => {
                             await deleteTaskMutation.mutateAsync({
                               taskName,
@@ -621,7 +610,11 @@ export function App() {
                           size="icon"
                           variant="ghost"
                         >
-                          <Trash2Icon />
+                          {deleteTaskMutation.isPending ? (
+                            <LoaderIcon className="animate-spin" />
+                          ) : (
+                            <Trash2Icon />
+                          )}
                         </Button>
                       </div>
                     </div>

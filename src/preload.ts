@@ -1,4 +1,5 @@
-import { exec, ExecException, ExecOptions } from "child_process";
+import { exec, ExecException, ExecOptions, execSync } from "child_process";
+import { format } from "date-fns";
 import { contextBridge, ipcRenderer } from "electron";
 import fs from "fs";
 import os from "os";
@@ -8,7 +9,6 @@ interface ShutdownSchedule {
   action: "shutdown" | "reboot";
   taskName: string;
   timestamp: number;
-  delayInSeconds: number;
   scheduledTime: string;
   enabled: boolean;
   scheduleType: "once" | "daily" | "weekly";
@@ -47,6 +47,25 @@ const isWindows = os.platform() === "win32";
 const isMacOS = os.platform() === "darwin";
 const isLinux = os.platform() === "linux";
 const isUnix = !isMacOS && !isLinux && !isWindows;
+
+// Function to get the system short date format
+function getWindowsSystemShortDateFormat() {
+  const command = `reg query "HKEY_CURRENT_USER\\Control Panel\\International" /v sShortDate`;
+  const output = execSync(command, { encoding: "utf-8" });
+
+  const match = output.match(/sShortDate\s+REG_SZ\s+(.+)/);
+  return match ? match[1].trim() : "MM/dd/yyyy"; // Fallback to a default format
+}
+
+// Format the date using the system's short date format
+function formatWindowsScheduledDate(timestamp: number) {
+  const shortDateFormat = getWindowsSystemShortDateFormat();
+  const formattedDate = format(
+    new Date(timestamp),
+    shortDateFormat.replace(/M/g, "M").replace(/d/g, "d").replace(/y/g, "y")
+  );
+  return formattedDate;
+}
 
 // Helper function to load schedules from a JSON file
 const loadSchedules = async () => {
@@ -163,7 +182,6 @@ const listShutdownSchedules = async () => {
 };
 
 const createTask = async ({
-  delayInSeconds = 0,
   delayInMinutes = 0,
   delayInHours = 0,
   delayInDays = 0,
@@ -173,7 +191,6 @@ const createTask = async ({
   enabled = true,
   onSuccess,
 }: {
-  delayInSeconds?: number;
   delayInMinutes: number;
   delayInHours: number;
   delayInDays: number;
@@ -184,7 +201,6 @@ const createTask = async ({
   onSuccess?: () => void;
 }) => {
   const delayInMilliseconds =
-    (delayInSeconds > 0 && delayInSeconds <= 60 ? 61 : delayInSeconds) * 1000 +
     (delayInMinutes === 1 ? delayInMinutes + 1 : delayInMinutes) * 60 * 1000 +
     delayInHours * 60 * 60 * 1000 +
     delayInDays * 24 * 60 * 60 * 1000;
@@ -203,12 +219,11 @@ const createTask = async ({
 
   if (isWindows) {
     // Windows scheduling with schtasks remains the same
-    const command =
-      action === "shutdown"
-        ? `shutdown -s -f -t ${Math.floor(delayInMilliseconds / 1000)}`
-        : `shutdown -r -f -t ${Math.floor(delayInMilliseconds / 1000)}`;
+    const command = action === "shutdown" ? `shutdown -s -f` : `shutdown -r -f`;
 
-    let schtasksCommand = `schtasks /create /tn ${taskName} /tr "${command}" /st ${scheduledTime}`;
+    const windowsScheduledDate = formatWindowsScheduledDate(timestamp);
+
+    let schtasksCommand = `schtasks /create /tn ${taskName} /tr "${command}" /st ${scheduledTime} /sd ${windowsScheduledDate}`;
     if (scheduleType === "daily") {
       schtasksCommand += " /sc daily";
     } else if (scheduleType === "weekly" && daysOfWeek.length > 0) {
@@ -219,13 +234,14 @@ const createTask = async ({
 
     try {
       await execAsync(schtasksCommand);
-      console.log(`${action} timer set for ${scheduledTime}`);
+      console.log(
+        `${action} timer set for ${scheduledTime} ${windowsScheduledDate}`
+      );
       const schedules = await loadSchedules();
       schedules.push({
         action,
         taskName,
         timestamp,
-        delayInSeconds,
         scheduledTime,
         enabled,
         scheduleType,
@@ -295,7 +311,6 @@ const createTask = async ({
           action,
           taskName,
           timestamp,
-          delayInSeconds,
           scheduledTime,
           enabled,
           scheduleType,
@@ -336,7 +351,6 @@ const createTask = async ({
           action,
           taskName,
           timestamp,
-          delayInSeconds,
           scheduledTime,
           enabled,
           scheduleType,

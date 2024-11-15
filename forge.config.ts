@@ -12,6 +12,8 @@ import path from "path";
 import os from "os";
 import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
 
+// PS: app doesn't launch from shortcut on windows when packaged with squirrel and version set to 0.0.0
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: false,

@@ -48,6 +48,7 @@ import React, { useState } from "react";
 import { queryClient } from ".";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
+// type ArgumentTypes = Parameters<typeof window.bridge.createTask>;
 
 export function App() {
   const { toast } = useToast();
@@ -64,24 +65,6 @@ export function App() {
   });
   const createTaskMutation = useMutation({
     mutationFn: window.bridge.createTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-  const deleteTaskMutation = useMutation({
-    mutationFn: window.bridge.deleteTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-  const enableTaskMutation = useMutation({
-    mutationFn: window.bridge.enableTask,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
-  const disableTaskMutation = useMutation({
-    mutationFn: window.bridge.disableTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -111,9 +94,9 @@ export function App() {
     { day: "Sun", selected: false },
   ]);
 
-  const [scheduleInMinutes, setScheduleInMinutes] = useState(1);
-  const [scheduleInHours, setScheduleInHours] = useState(0);
-  const [scheduleInDays, setScheduleInDays] = useState(0);
+  const [delayInMinutes, setDelayInMinutes] = useState(1);
+  const [delayInHours, setDelayInHours] = useState(0);
+  const [delayInDays, setDelayInDays] = useState(0);
 
   const handleDaySelect = (day: string) => {
     if (selectedDays.length === 1 && selectedDays.includes(day)) {
@@ -162,7 +145,8 @@ export function App() {
                     <DialogTitle>About</DialogTitle>
                     <DialogDescription>
                       Shutdown Scheduler is a simple application that uses
-                      system utilities{" "}
+                      system utilities for scheduling shutdown and restart
+                      tasks. For Unix-like systems, it uses{" "}
                       <a
                         target="_blank"
                         href="https://www.geeksforgeeks.org/crontab-in-linux-with-examples/"
@@ -177,8 +161,15 @@ export function App() {
                         className=" underline"
                       >
                         at
-                      </a>{" "}
-                      for scheduling shutdown and restart tasks.
+                      </a>
+                      . For Windows, it uses the{" "}
+                      <a
+                        target="_blank"
+                        href="https://learn.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page"
+                        className=" underline"
+                      >
+                        Task Scheduler
+                      </a>
                     </DialogDescription>
                   </DialogHeader>
                   <div>
@@ -415,17 +406,6 @@ export function App() {
               <div>
                 <div className="text-xl font-bold mb-4">Delay</div>
                 <div className="flex gap-4 items-center">
-                  {/* <div className="grid w-full items-center gap-2">
-                <Label htmlFor="delay">Delay (seconds)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  id="delay"
-                  placeholder="Specify a delay in seconds"
-                  value={scheduleInSeconds}
-                  onChange={(e) => setScheduleInSeconds(Number(e.target.value))}
-                />
-              </div> */}
                   <div className="grid w-full items-center gap-2">
                     <Label htmlFor="delay_minutes">Minutes</Label>
                     <Input
@@ -433,9 +413,9 @@ export function App() {
                       type="number"
                       id="delay_minutes"
                       placeholder="Specify a delay in minutes"
-                      value={scheduleInMinutes}
+                      value={delayInMinutes}
                       onChange={(e) =>
-                        setScheduleInMinutes(Number(e.target.value))
+                        setDelayInMinutes(Number(e.target.value))
                       }
                     />
                   </div>
@@ -446,10 +426,8 @@ export function App() {
                       type="number"
                       id="delay_hours"
                       placeholder="Specify a delay in hours"
-                      value={scheduleInHours}
-                      onChange={(e) =>
-                        setScheduleInHours(Number(e.target.value))
-                      }
+                      value={delayInHours}
+                      onChange={(e) => setDelayInHours(Number(e.target.value))}
                     />
                   </div>
                   <div className="grid w-full items-center gap-2">
@@ -459,10 +437,8 @@ export function App() {
                       type="number"
                       id="delay_days"
                       placeholder="Specify a delay in days"
-                      value={scheduleInDays}
-                      onChange={(e) =>
-                        setScheduleInDays(Number(e.target.value))
-                      }
+                      value={delayInDays}
+                      onChange={(e) => setDelayInDays(Number(e.target.value))}
                     />
                   </div>
                 </div>
@@ -477,9 +453,9 @@ export function App() {
                     action: selectedAction,
                     scheduleType: frequency,
                     daysOfWeek: selectedDays,
-                    delayInMinutes: scheduleInMinutes,
-                    delayInHours: scheduleInHours,
-                    delayInDays: scheduleInDays,
+                    delayInMinutes: delayInMinutes,
+                    delayInHours: delayInHours,
+                    delayInDays: delayInDays,
                   });
                 }}
               >
@@ -537,91 +513,12 @@ export function App() {
                   </span>
                 </div>
               )}
-              {sortedTasks.map(
-                ({
-                  action,
-                  timestamp,
-                  taskName,
-                  enabled,
-                  jobId,
-                  daysOfWeek,
-                  scheduleType,
-                }) => (
-                  <React.Fragment key={timestamp}>
-                    <div className="flex items-center justify-between gap-x-2">
-                      <div className="flex flex-col gap-2">
-                        <span>
-                          {
-                            {
-                              shutdown: "Shutdown",
-                              reboot: "Restart",
-                            }[action]
-                          }{" "}
-                          scheduled{" "}
-                          <Badge variant="outline">{scheduleType}</Badge> at{" "}
-                          {new Date(timestamp).toLocaleString(
-                            [],
-                            scheduleType === "once"
-                              ? {}
-                              : {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                          )}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {scheduleType === "weekly" &&
-                            daysOfWeek.length > 0 && (
-                              <div className="flex gap-2">
-                                {daysOfWeek.map((day) => (
-                                  <Badge variant="default">{day}</Badge>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        {false && (
-                          <Switch
-                            id={taskName}
-                            checked={enabled}
-                            onCheckedChange={async () => {
-                              if (!enabled) {
-                                await enableTaskMutation.mutateAsync({
-                                  taskName,
-                                });
-                              } else {
-                                await disableTaskMutation.mutateAsync({
-                                  taskName,
-                                });
-                              }
-                            }}
-                          />
-                        )}
-                        <Button
-                          disabled={!!queryClient.isMutating()}
-                          onClick={async () => {
-                            await deleteTaskMutation.mutateAsync({
-                              taskName,
-                              jobId,
-                            });
-                          }}
-                          size="icon"
-                          variant="ghost"
-                        >
-                          {deleteTaskMutation.isPending ? (
-                            <LoaderIcon className="animate-spin" />
-                          ) : (
-                            <Trash2Icon />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="border-b last:border-b-0 last:hidden"></div>
-                  </React.Fragment>
-                )
-              )}
+              {sortedTasks.map((task) => (
+                <React.Fragment key={task.taskName}>
+                  <TaskRow task={task} />
+                  <div className="border-b last:border-b-0 last:hidden"></div>
+                </React.Fragment>
+              ))}
             </CardContent>
             {/* <CardFooter>
               <Button variant="outline" className="w-full">
@@ -638,5 +535,110 @@ export function App() {
         className="fixed top-0 h-6 w-full app-region-drag"
       ></div> */}
     </>
+  );
+}
+
+export default function TaskRow({
+  task,
+}: {
+  task: {
+    scheduledTime: string;
+    action: "shutdown" | "reboot";
+    taskName: string;
+    timestamp: number;
+    enabled: boolean;
+    scheduleType: "once" | "daily" | "weekly";
+    daysOfWeek?: string[];
+    jobId?: string;
+  };
+}) {
+  const deleteTaskMutation = useMutation({
+    mutationFn: window.bridge.deleteTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+  const enableTaskMutation = useMutation({
+    mutationFn: window.bridge.enableTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+  const disableTaskMutation = useMutation({
+    mutationFn: window.bridge.disableTask,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  return (
+    <div className="flex items-center justify-between gap-x-2">
+      <div className="flex flex-col gap-2">
+        <span>
+          {
+            {
+              shutdown: "Shutdown",
+              reboot: "Restart",
+            }[task.action]
+          }{" "}
+          scheduled <Badge variant="outline">{task.scheduleType}</Badge> at{" "}
+          {new Date(task.timestamp).toLocaleString(
+            [],
+            task.scheduleType === "once"
+              ? {}
+              : {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                }
+          )}
+        </span>
+        <div className="flex items-center gap-2">
+          {task.scheduleType === "weekly" && task.daysOfWeek.length > 0 && (
+            <div className="flex gap-2">
+              {task.daysOfWeek.map((day) => (
+                <Badge variant="default">{day}</Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        {false && (
+          <Switch
+            id={task.taskName}
+            checked={task.enabled}
+            onCheckedChange={async () => {
+              if (!task.enabled) {
+                await enableTaskMutation.mutateAsync({
+                  taskName: task.taskName,
+                });
+              } else {
+                await disableTaskMutation.mutateAsync({
+                  taskName: task.taskName,
+                });
+              }
+            }}
+          />
+        )}
+        <Button
+          disabled={!!queryClient.isMutating()}
+          onClick={async () => {
+            await deleteTaskMutation.mutateAsync({
+              taskName: task.taskName,
+              jobId: task.jobId,
+            });
+          }}
+          size="icon"
+          variant="ghost"
+        >
+          {deleteTaskMutation.isPending ? (
+            <LoaderIcon className="animate-spin" />
+          ) : (
+            <Trash2Icon />
+          )}
+        </Button>
+      </div>
+    </div>
   );
 }

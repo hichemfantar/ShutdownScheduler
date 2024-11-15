@@ -20,13 +20,20 @@ interface ShutdownSchedule {
 export type ExecAsyncError = { error: ExecException; stderr: string };
 const execAsync = (command: string, options?: ExecOptions): Promise<string> => {
   return new Promise((resolve, reject) => {
-    exec(command, options, (error, stdout, stderr) => {
-      if (error) {
-        reject({ error, stderr });
-      } else {
-        resolve(stdout);
+    exec(
+      command,
+      {
+        shell: isWindows ? "cmd.exe" : undefined,
+        ...options,
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject({ error, stderr });
+        } else {
+          resolve(stdout);
+        }
       }
-    });
+    );
   });
 };
 

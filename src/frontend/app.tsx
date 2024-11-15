@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CopyIcon,
+  ExternalLinkIcon,
   InfoIcon,
   LoaderIcon,
   PlusIcon,
@@ -56,20 +57,31 @@ export function App() {
     queryKey: ["tasks"],
     queryFn: window.bridge.listShutdownSchedules,
   });
+  const getOsQuery = useQuery({
+    queryKey: ["os"],
+    queryFn: window.bridge.getOs,
+  });
+  const openTaskSchedulerMutation = useMutation({
+    mutationKey: ["openTaskScheduler"],
+    mutationFn: window.bridge.openTaskScheduler,
+  });
 
   const deleteAllTasksMutation = useMutation({
+    mutationKey: ["deleteAllTasks"],
     mutationFn: window.bridge.deleteAllTasks,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
   const createTaskMutation = useMutation({
+    mutationKey: ["createTask"],
     mutationFn: window.bridge.createTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
   const disableAllTasksMutation = useMutation({
+    mutationKey: ["disableAllTasks"],
     mutationFn: window.bridge.disableAllTasks,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -477,6 +489,22 @@ export function App() {
                   <CardDescription>Manage your schedule here.</CardDescription>
                 </div>
                 <div className="justify-end flex gap-2">
+                  {getOsQuery.data === "win32" && (
+                    <Button
+                      disabled={!!queryClient.isMutating()}
+                      onClick={async () => {
+                        await openTaskSchedulerMutation.mutateAsync();
+                      }}
+                      variant="ghost"
+                    >
+                      {openTaskSchedulerMutation.isPending ? (
+                        <LoaderIcon className="animate-spin" />
+                      ) : (
+                        <ExternalLinkIcon />
+                      )}
+                      Open Task Scheduler
+                    </Button>
+                  )}
                   <Button
                     disabled={
                       !!queryClient.isMutating() || !getTasksQuery.data?.length
@@ -493,6 +521,7 @@ export function App() {
                     )}
                     Delete All
                   </Button>
+
                   {/* <Button
                     onClick={async () => {
                       await disableAllTasksMutation.mutateAsync();
@@ -553,18 +582,21 @@ export default function TaskRow({
   };
 }) {
   const deleteTaskMutation = useMutation({
+    mutationKey: ["deleteTask"],
     mutationFn: window.bridge.deleteTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
   const enableTaskMutation = useMutation({
+    mutationKey: ["enableTask"],
     mutationFn: window.bridge.enableTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
   const disableTaskMutation = useMutation({
+    mutationKey: ["disableTask"],
     mutationFn: window.bridge.disableTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

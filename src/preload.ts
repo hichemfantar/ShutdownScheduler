@@ -597,6 +597,8 @@ export const bridgeApi = {
   disableAllTasks,
 
   isDev: () => ipcRenderer.invoke("isDev", ["hey"]),
+  getOs: () => os.platform(),
+  openTaskScheduler: () => execAsync("start taskschd.msc"),
   runCommandInTerminal: async (command: string) => {
     // The command you want to run in the Terminal
     // const terminalCommand = 'echo \\"Hello, World!\\"';

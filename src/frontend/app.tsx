@@ -372,25 +372,27 @@ export function App() {
                               <p>Copy to Clipboard</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="submit"
-                                size="sm"
-                                className="px-3"
-                                onClick={async () => {
-                                  await window.bridge.runCommandInTerminal(
-                                    "at -l"
-                                  );
-                                }}
-                              >
-                                <TerminalIcon />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Run in Terminal</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {getOsQuery.data === "darwin" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  className="px-3"
+                                  onClick={async () => {
+                                    await window.bridge.runCommandInTerminal(
+                                      "at -l"
+                                    );
+                                  }}
+                                >
+                                  <TerminalIcon />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Run in Terminal</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 mt-4">
@@ -424,25 +426,27 @@ export function App() {
                               <p>Copy to Clipboard</p>
                             </TooltipContent>
                           </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="submit"
-                                size="sm"
-                                className="px-3"
-                                onClick={async () => {
-                                  await window.bridge.runCommandInTerminal(
-                                    "crontab -l"
-                                  );
-                                }}
-                              >
-                                <TerminalIcon />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Run in Terminal</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          {getOsQuery.data === "darwin" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  className="px-3"
+                                  onClick={async () => {
+                                    await window.bridge.runCommandInTerminal(
+                                      "crontab -l"
+                                    );
+                                  }}
+                                >
+                                  <TerminalIcon />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Run in Terminal</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </div>
                     </div>

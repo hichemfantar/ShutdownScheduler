@@ -120,9 +120,11 @@ export function App() {
     { day: "Sun", selected: false },
   ]);
 
-  const [delayInMinutes, setDelayInMinutes] = useState(1);
+  const [delayInMinutes, setDelayInMinutes] = useState(5);
   const [delayInHours, setDelayInHours] = useState(0);
   const [delayInDays, setDelayInDays] = useState(0);
+
+  const totalDelay = delayInMinutes + delayInHours * 60 + delayInDays * 24 * 60;
 
   const handleDaySelect = (day: string) => {
     if (selectedDays.length === 1 && selectedDays.includes(day)) {
@@ -344,14 +346,21 @@ export function App() {
                   )}
                 </DialogContent>
               </Dialog>
-              <Button asChild variant="ghost" size="icon">
-                <a
-                  target="_blank"
-                  href="https://github.com/hichemfantar/ShutdownScheduler"
-                >
-                  <GithubIcon />
-                </a>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button asChild variant="ghost" size="icon">
+                    <a
+                      target="_blank"
+                      href="https://github.com/hichemfantar/ShutdownScheduler"
+                    >
+                      <GithubIcon />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Star me on GitHub</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div className="flex flex-col gap-8">
@@ -517,7 +526,7 @@ export function App() {
 
             <div className="justify-end flex gap-2">
               <Button
-                disabled={!!queryClient.isMutating()}
+                disabled={!!queryClient.isMutating() || !totalDelay}
                 onClick={async () => {
                   await createTaskMutation.mutateAsync({
                     action: selectedAction,

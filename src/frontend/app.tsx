@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  BugIcon,
   CopyIcon,
   ExternalLinkIcon,
   GithubIcon,
@@ -46,14 +47,18 @@ import {
   TerminalIcon,
   Trash2Icon,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { queryClient } from ".";
+import { ShutdownSchedule } from "@/preload";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 // type ArgumentTypes = Parameters<typeof window.bridge.createTask>;
 
 export function App() {
   const { toast } = useToast();
+  const [isFirstTime, setIsFirstTime] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+
   const getTasksQuery = useQuery({
     queryKey: ["tasks"],
     queryFn: window.bridge.listShutdownSchedules,
@@ -139,6 +144,15 @@ export function App() {
     ? getTasksQuery.data.sort((a, b) => a.timestamp - b.timestamp)
     : [];
 
+  useEffect(() => {
+    const hasStartedBefore = localStorage.getItem("hasStartedBefore");
+    if (!hasStartedBefore) {
+      setIsFirstTime(true);
+      setIsInfoDialogOpen(true);
+      localStorage.setItem("hasStartedBefore", "true");
+    }
+  }, []);
+
   return (
     <>
       {/* use this for center */}
@@ -151,7 +165,12 @@ export function App() {
             </div>
             <div className="flex items-center gap-2">
               {false && <ModeToggle />}
-              <Dialog defaultOpen>
+              <Dialog
+                onOpenChange={(isOpen) => {
+                  setIsInfoDialogOpen(isOpen);
+                }}
+                open={isInfoDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <InfoIcon />
@@ -165,142 +184,164 @@ export function App() {
                   <DialogHeader>
                     <DialogTitle>About</DialogTitle>
                     <DialogDescription>
-                      Shutdown Scheduler is a simple application that uses
-                      system utilities for scheduling shutdown and restart
-                      tasks. For Unix-like systems, it uses{" "}
-                      <a
-                        target="_blank"
-                        href="https://www.geeksforgeeks.org/crontab-in-linux-with-examples/"
-                        className=" underline"
-                      >
-                        Cron
-                      </a>{" "}
-                      and{" "}
-                      <a
-                        target="_blank"
-                        href="https://www.geeksforgeeks.org/at-command-in-linux-with-examples/"
-                        className=" underline"
-                      >
-                        at
-                      </a>
-                      . For Windows, it uses the{" "}
-                      <a
-                        target="_blank"
-                        href="https://learn.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page"
-                        className=" underline"
-                      >
-                        Task Scheduler
-                      </a>
+                      Shutdown Scheduler is a simple cross-platform application
+                      that uses system utilities for scheduling shutdown and
+                      restart tasks.
                     </DialogDescription>
                   </DialogHeader>
-                  <div>
-                    <div className="flex flex-col gap-2 mt-4">
+                  <p className="text-sm">
+                    For Unix-like systems, it uses{" "}
+                    <a
+                      target="_blank"
+                      href="https://www.geeksforgeeks.org/crontab-in-linux-with-examples/"
+                      className=" underline"
+                    >
+                      Cron
+                    </a>{" "}
+                    for recurring tasks and{" "}
+                    <a
+                      target="_blank"
+                      href="https://www.geeksforgeeks.org/at-command-in-linux-with-examples/"
+                      className=" underline"
+                    >
+                      at
+                    </a>{" "}
+                    for one-time tasks. <br /> For Windows, it uses the{" "}
+                    <a
+                      target="_blank"
+                      href="https://learn.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page"
+                      className=" underline"
+                    >
+                      Task Scheduler
+                    </a>
+                  </p>
+                  {getOsQuery.data === "win32" && (
+                    <Button
+                      disabled={!!queryClient.isMutating()}
+                      onClick={async () => {
+                        await openTaskSchedulerMutation.mutateAsync();
+                      }}
+                      variant="secondary"
+                    >
+                      {openTaskSchedulerMutation.isPending ? (
+                        <LoaderIcon className="animate-spin" />
+                      ) : (
+                        <ExternalLinkIcon />
+                      )}
+                      Open Task Scheduler
+                    </Button>
+                  )}
+
+                  {getOsQuery.data === "darwin" && (
+                    <div>
                       <p className="text-sm text-muted-foreground">
                         Use the following commands in your Terminal to see the
                         created tasks: <br />
                       </p>
-                      <Label>List one time tasks</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="grid flex-1 gap-2">
-                          <Input value="$ at -l" readOnly />
+                      <div className="flex flex-col gap-2 mt-4">
+                        <Label>List one time tasks</Label>
+                        <div className="flex items-center gap-2">
+                          <div className="grid flex-1 gap-2">
+                            <Input value="$ at -l" readOnly />
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="px-3"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText("at -l");
+                                  toast({
+                                    title: "Copied",
+                                    description:
+                                      "Command 'at -l' copied to clipboard.",
+                                  });
+                                }}
+                              >
+                                <span className="sr-only">Copy</span>
+                                <CopyIcon />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy to Clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="px-3"
+                                onClick={async () => {
+                                  await window.bridge.runCommandInTerminal(
+                                    "at -l"
+                                  );
+                                }}
+                              >
+                                <TerminalIcon />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Run in Terminal</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="submit"
-                              size="sm"
-                              className="px-3"
-                              onClick={async () => {
-                                await navigator.clipboard.writeText("at -l");
-                                toast({
-                                  title: "Copied",
-                                  description:
-                                    "Command 'at -l' copied to clipboard.",
-                                });
-                              }}
-                            >
-                              <span className="sr-only">Copy</span>
-                              <CopyIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy to Clipboard</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="submit"
-                              size="sm"
-                              className="px-3"
-                              onClick={async () => {
-                                await window.bridge.runCommandInTerminal(
-                                  "at -l"
-                                );
-                              }}
-                            >
-                              <TerminalIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Run in Terminal</p>
-                          </TooltipContent>
-                        </Tooltip>
+                      </div>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <Label>List recurring tasks</Label>
+                        <div className="flex items-center gap-2">
+                          <div className="grid flex-1 gap-2">
+                            <Input value="$ crontab -l" readOnly />
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="px-3"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(
+                                    "crontab -l"
+                                  );
+                                  toast({
+                                    title: "Copied",
+                                    description:
+                                      "Command 'crontab -l' copied to clipboard.",
+                                  });
+                                }}
+                              >
+                                <span className="sr-only">Copy</span>
+                                <CopyIcon />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy to Clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="submit"
+                                size="sm"
+                                className="px-3"
+                                onClick={async () => {
+                                  await window.bridge.runCommandInTerminal(
+                                    "crontab -l"
+                                  );
+                                }}
+                              >
+                                <TerminalIcon />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Run in Terminal</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 mt-4">
-                      <Label>List recurring tasks</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="grid flex-1 gap-2">
-                          <Input value="$ crontab -l" readOnly />
-                        </div>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="submit"
-                              size="sm"
-                              className="px-3"
-                              onClick={async () => {
-                                await navigator.clipboard.writeText(
-                                  "crontab -l"
-                                );
-                                toast({
-                                  title: "Copied",
-                                  description:
-                                    "Command 'crontab -l' copied to clipboard.",
-                                });
-                              }}
-                            >
-                              <span className="sr-only">Copy</span>
-                              <CopyIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy to Clipboard</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="submit"
-                              size="sm"
-                              className="px-3"
-                              onClick={async () => {
-                                await window.bridge.runCommandInTerminal(
-                                  "crontab -l"
-                                );
-                              }}
-                            >
-                              <TerminalIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Run in Terminal</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </DialogContent>
               </Dialog>
               <Button asChild variant="ghost" size="icon">
@@ -522,6 +563,18 @@ export function App() {
                       Open Task Scheduler
                     </Button>
                   )}
+                  {getOsQuery.data !== "win32" && (
+                    <Button
+                      disabled={!!queryClient.isMutating()}
+                      onClick={async () => {
+                        setIsInfoDialogOpen(true);
+                      }}
+                      variant="ghost"
+                    >
+                      <BugIcon />
+                      Debug
+                    </Button>
+                  )}
                   <Button
                     disabled={
                       !!queryClient.isMutating() || !getTasksQuery.data?.length
@@ -584,20 +637,7 @@ export function App() {
   );
 }
 
-export default function TaskRow({
-  task,
-}: {
-  task: {
-    scheduledTime: string;
-    action: "shutdown" | "reboot";
-    taskName: string;
-    timestamp: number;
-    enabled: boolean;
-    scheduleType: "once" | "daily" | "weekly";
-    daysOfWeek?: string[];
-    jobId?: string;
-  };
-}) {
+export default function TaskRow({ task }: { task: ShutdownSchedule }) {
   const { toast } = useToast();
 
   const deleteTaskMutation = useMutation({
@@ -689,7 +729,7 @@ export default function TaskRow({
           onClick={async () => {
             await deleteTaskMutation.mutateAsync({
               taskName: task.taskName,
-              jobId: task.jobId,
+              atJobId: task.atJobId,
             });
           }}
           size="icon"

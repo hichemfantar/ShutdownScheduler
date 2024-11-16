@@ -5,7 +5,7 @@ import fs from "fs";
 import os from "os";
 
 // Define a type for shutdown schedule entries
-interface ShutdownSchedule {
+export interface ShutdownSchedule {
   action: "shutdown" | "reboot";
   taskName: string;
   timestamp: number;
@@ -14,7 +14,7 @@ interface ShutdownSchedule {
   scheduleType: "once" | "daily" | "weekly";
   daysOfWeek?: string[];
   // Optional job ID for one-time scheduling with `at`
-  jobId?: string;
+  atJobId?: string;
 }
 
 export type ExecAsyncError = { error: ExecException; stderr: string };
@@ -49,7 +49,7 @@ const shutdownSchedulesPath = async () => {
   return fileLocation;
 };
 
-const taskNamePrefix = "ElectronShutdownTask";
+const taskNamePrefix = "ShutdownSchedulerTask";
 const isWindows = os.platform() === "win32";
 const isMacOS = os.platform() === "darwin";
 const isLinux = os.platform() === "linux";
@@ -322,7 +322,7 @@ const createTask = async ({
           enabled,
           scheduleType,
           daysOfWeek,
-          jobId,
+          atJobId: jobId,
         });
         await saveSchedules(schedules);
 
@@ -379,10 +379,10 @@ const createTask = async ({
 
 const deleteTask = async ({
   taskName,
-  jobId,
+  atJobId,
 }: {
   taskName: string;
-  jobId?: string;
+  atJobId?: string;
 }) => {
   const schedules = await loadSchedules();
   const taskIndex = schedules.findIndex(
@@ -402,8 +402,8 @@ const deleteTask = async ({
         );
       }
     } else {
-      if (jobId) {
-        await deleteAtTask(jobId);
+      if (atJobId) {
+        await deleteAtTask(atJobId);
         schedules.splice(taskIndex, 1);
         await saveSchedules(schedules);
       } else {
@@ -443,9 +443,9 @@ const deleteAllTasks = async () => {
     {
       // delete all at tasks
       const schedules = await loadSchedules();
-      for (const { jobId } of schedules) {
-        if (jobId) {
-          await deleteAtTask(jobId);
+      for (const { atJobId } of schedules) {
+        if (atJobId) {
+          await deleteAtTask(atJobId);
         }
       }
     }

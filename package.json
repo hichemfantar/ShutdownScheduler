@@ -3,7 +3,7 @@
   "productName": "Shutdown Scheduler",
   "version": "0.0.1",
   "description": "Schedule Shutdowns like a Pro",
-  "homepage": "https://github.com/hichemfantar/shutdown-scheduler",
+  "homepage": "https://github.com/hichemfantar/ShutdownScheduler",
   "repository": {
     "type": "git",
     "url": "https://github.com/hichemfantar/ShutdownScheduler.git"

@@ -15,7 +15,6 @@ import { PublisherGitHubConfig } from "@electron-forge/publisher-github";
 const config: ForgeConfig = {
   packagerConfig: {
     asar: false,
-    // name: "shutdown-scheduler",
     // this must be used because it breaks on ubuntu
     executableName:
       os.platform() === "linux" ? "shutdown-scheduler" : undefined,
@@ -28,7 +27,7 @@ const config: ForgeConfig = {
     new MakerSquirrel({
       setupIcon: path.join(process.cwd(), "public", "assets", "icon.ico"),
       iconUrl:
-        "https://raw.githubusercontent.com/hichemfantar/shutdown-scheduler/main/public/assets/icon.ico",
+        "https://raw.githubusercontent.com/hichemfantar/ShutdownScheduler/main/public/assets/icon.ico",
     }),
     // new MakerZIP({}, ["darwin"]),
     // new MakerRpm({}),
@@ -127,7 +126,7 @@ const config: ForgeConfig = {
       config: {
         repository: {
           owner: "hichemfantar",
-          name: "shutdown-scheduler",
+          name: "ShutdownScheduler",
         },
         prerelease: true,
         draft: true,

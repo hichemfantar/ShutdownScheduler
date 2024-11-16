@@ -32,8 +32,8 @@ _Main interface._
 1. Clone the repository and install dependencies:
 
    ```bash
-   git clone https://github.com/hichemfantar/shutdown-scheduler
-   cd shutdown-scheduler
+   git clone https://github.com/hichemfantar/ShutdownScheduler
+   cd ShutdownScheduler
    npm install
    ```
 

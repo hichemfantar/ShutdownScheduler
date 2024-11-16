@@ -59,7 +59,7 @@ const createWindow = () => {
 ipcMain.handle("dark-mode:system", () => {
   nativeTheme.themeSource = "system";
 });
-
+// Menu.setApplicationMenu(null);
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

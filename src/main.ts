@@ -1,11 +1,15 @@
 import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import started from "electron-squirrel-startup";
 import path from "path";
+import { updateElectronApp } from "update-electron-app";
+import { scheduleFileName } from "./common";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
-// updateElectronApp(); // additional configuration options available
+updateElectronApp({
+  notifyUser: true,
+});
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -81,8 +85,11 @@ app.whenReady().then(() => {
   ipcMain.handle("getSaveLocation", () => {
     return path.join(
       isDev ? __dirname : app.getPath("userData"),
-      "shutdownSchedules.json"
+      scheduleFileName
     );
+  });
+  ipcMain.handle("getUserDataLocation", () => {
+    return path.join(isDev ? __dirname : app.getPath("userData"));
   });
   // ipcMain.handle("createTask", async (e, args) => {
   //   console.log(args);

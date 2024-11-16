@@ -1,3 +1,4 @@
+import { taskNamePrefix } from "@/common";
 import { ModeToggle } from "@/components/theme/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,11 +36,13 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ShutdownSchedule } from "@/preload";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   BugIcon,
   CopyIcon,
   ExternalLinkIcon,
+  FolderOpenIcon,
   GithubIcon,
   InfoIcon,
   LoaderIcon,
@@ -49,7 +52,6 @@ import {
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { queryClient } from ".";
-import { ShutdownSchedule } from "@/preload";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 // type ArgumentTypes = Parameters<typeof window.bridge.createTask>;
@@ -66,6 +68,14 @@ export function App() {
   const getOsQuery = useQuery({
     queryKey: ["os"],
     queryFn: window.bridge.getOs,
+  });
+  const getUserDataLocationQuery = useQuery({
+    queryKey: ["userDataLocation"],
+    queryFn: window.bridge.getUserDataLocation,
+  });
+  const getShutdownSchedulesPathQuery = useQuery({
+    queryKey: ["getShutdownSchedulesPath"],
+    queryFn: window.bridge.getShutdownSchedulesPath,
   });
   const openTaskSchedulerMutation = useMutation({
     mutationKey: ["openTaskScheduler"],
@@ -217,6 +227,64 @@ export function App() {
                       Task Scheduler
                     </a>
                   </p>
+                  {getUserDataLocationQuery.data &&
+                    getShutdownSchedulesPathQuery.data && (
+                      <div>
+                        <div className="flex flex-col gap-2">
+                          <Label>Schedule file location:</Label>
+                          <div className="flex items-center gap-2">
+                            <div className="grid flex-1 gap-2">
+                              <Input
+                                value={getShutdownSchedulesPathQuery.data}
+                                readOnly
+                              />
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  className="px-3"
+                                  onClick={async () => {
+                                    await navigator.clipboard.writeText(
+                                      getUserDataLocationQuery.data
+                                    );
+                                    toast({
+                                      title: "Copied",
+                                      description:
+                                        "Folder path copied to clipboard.",
+                                    });
+                                  }}
+                                >
+                                  <span className="sr-only">Copy</span>
+                                  <CopyIcon />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Copy to Clipboard</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  className="px-3"
+                                  onClick={async () => {
+                                    await window.bridge.openFileExplorerInUserDataFolder();
+                                  }}
+                                >
+                                  <FolderOpenIcon />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Open in File Explorer</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   {getOsQuery.data === "win32" && (
                     <Button
                       disabled={!!queryClient.isMutating()}
@@ -557,20 +625,27 @@ export function App() {
                 </div>
                 <div className="justify-end flex gap-2">
                   {getOsQuery.data === "win32" && (
-                    <Button
-                      disabled={!!queryClient.isMutating()}
-                      onClick={async () => {
-                        await openTaskSchedulerMutation.mutateAsync();
-                      }}
-                      variant="ghost"
-                    >
-                      {openTaskSchedulerMutation.isPending ? (
-                        <LoaderIcon className="animate-spin" />
-                      ) : (
-                        <ExternalLinkIcon />
-                      )}
-                      Open Task Scheduler
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          disabled={!!queryClient.isMutating()}
+                          onClick={async () => {
+                            await openTaskSchedulerMutation.mutateAsync();
+                          }}
+                          variant="ghost"
+                        >
+                          {openTaskSchedulerMutation.isPending ? (
+                            <LoaderIcon className="animate-spin" />
+                          ) : (
+                            <ExternalLinkIcon />
+                          )}
+                          Open Task Scheduler
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Tasks are prefixed by `{taskNamePrefix}`</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                   {getOsQuery.data !== "win32" && (
                     <Button
@@ -646,7 +721,7 @@ export function App() {
   );
 }
 
-export default function TaskRow({ task }: { task: ShutdownSchedule }) {
+export function TaskRow({ task }: { task: ShutdownSchedule }) {
   const { toast } = useToast();
 
   const deleteTaskMutation = useMutation({

@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { contextBridge, ipcRenderer } from "electron";
 import fs from "fs";
 import os from "os";
+import { taskNamePrefix } from "./common";
 
 // Define a type for shutdown schedule entries
 export interface ShutdownSchedule {
@@ -38,10 +39,6 @@ const execAsync = (command: string, options?: ExecOptions): Promise<string> => {
 };
 
 // Paths and constants
-// const shutdownSchedulesPath = path.join(
-//   process.cwd(),
-//   "shutdownSchedules.json"
-// );
 const shutdownSchedulesPath = async () => {
   const fileLocation: string = await ipcRenderer.invoke("getSaveLocation");
   console.log(fileLocation);
@@ -49,7 +46,6 @@ const shutdownSchedulesPath = async () => {
   return fileLocation;
 };
 
-const taskNamePrefix = "ShutdownSchedulerTask";
 const isWindows = os.platform() === "win32";
 const isMacOS = os.platform() === "darwin";
 const isLinux = os.platform() === "linux";
@@ -599,6 +595,23 @@ export const bridgeApi = {
   isDev: () => ipcRenderer.invoke("isDev", ["hey"]),
   getOs: () => os.platform(),
   openTaskScheduler: () => execAsync("start taskschd.msc"),
+  openFileExplorerInUserDataFolder: async () => {
+    const loc: string = await ipcRenderer.invoke("getUserDataLocation");
+    let command;
+    if (isWindows) {
+      command = `start ${loc}`;
+      // command = `explorer.exe /select,${loc}`
+    } else if (isMacOS) {
+      command = `open ${loc}`;
+    } else {
+      command = `xdg-open ${loc}`;
+    }
+
+    execAsync(command);
+  },
+  getUserDataLocation: (): Promise<string> =>
+    ipcRenderer.invoke("getUserDataLocation"),
+  getShutdownSchedulesPath: () => shutdownSchedulesPath(),
   runCommandInTerminal: async (command: string) => {
     // The command you want to run in the Terminal
     // const terminalCommand = 'echo \\"Hello, World!\\"';

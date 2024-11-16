@@ -5,7 +5,8 @@
   "description": "Schedule Shutdowns like a Pro",
   "homepage": "https://github.com/hichemfantar/shutdown-scheduler",
   "repository": {
-    "url": "https://github.com/hichemfantar/shutdown-scheduler"
+    "type": "git",
+    "url": "https://github.com/hichemfantar/ShutdownScheduler.git"
   },
   "keywords": [],
   "author": {
@@ -75,6 +76,7 @@
     "react-use": "^17.5.1",
     "tailwind-merge": "^2.5.4",
     "tailwind-scrollbar": "^3.1.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "update-electron-app": "^3.0.0"
   }
 }

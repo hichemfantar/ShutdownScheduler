@@ -39,7 +39,25 @@ const config: ForgeConfig = {
         icon: path.join(process.cwd(), "public", "assets", "icon.png"),
       },
     }),
-    new MakerDMG(),
+    new MakerDMG({
+      // https://github.com/electron/forge/issues/3712
+      appPath: "",
+      icon: path.join(process.cwd(), "public", "assets", "icon.icns"),
+      background: path.join(
+        process.cwd(),
+        "public",
+        "assets",
+        "transparent.png"
+      ),
+      additionalDMGOptions: {
+        window: {
+          size: {
+            width: 658,
+            height: 498,
+          },
+        },
+      },
+    }),
   ],
   hooks: {
     // generateAssets: async (forgeConfig, resources) => {

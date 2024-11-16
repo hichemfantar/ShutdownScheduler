@@ -337,7 +337,7 @@ export function App() {
                     </Button>
                   )}
 
-                  {getOsQuery.data === "darwin" && (
+                  {getOsQuery.data !== "win32" && (
                     <div>
                       <p className="text-sm text-muted-foreground">
                         Use the following commands in your Terminal to see the

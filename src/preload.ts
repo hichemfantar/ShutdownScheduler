@@ -122,11 +122,11 @@ const enableCronTask = async (taskName: string) => {
       console.error(
         `Error enabling cron job for ${taskName}: ${error.message}`
       );
-      throw new Error(error);
+      // throw new Error(error);
     }
   } catch (error) {
     console.error(`Error reading crontab: ${error.message}`);
-    throw new Error(error);
+    // throw new Error(error);
     return;
   }
 };
@@ -156,11 +156,11 @@ const disableCronTask = async (taskName: string) => {
       console.error(
         `Error disabling cron job for ${taskName}: ${error.message}`
       );
-      throw new Error(error);
+      // throw new Error(error);
     }
   } catch (error) {
     console.error(`Error reading crontab: ${error.message}`);
-    throw new Error(error);
+    // throw new Error(error);
     return;
   }
 };
@@ -171,7 +171,7 @@ const deleteAtTask = async (jobId: string) => {
     console.log(`At job with ID ${jobId} deleted.`);
   } catch (error) {
     console.error(`Error deleting at job with ID ${jobId}: ${error.message}`);
-    throw new Error(error);
+    // throw new Error(error);
   }
 };
 
@@ -262,7 +262,7 @@ const createTask = async ({
       }
     } catch (error) {
       console.error(`Error setting ${action} timer: ${error.message}`);
-      throw new Error(error);
+      // throw new Error(error);
     }
   } else if (isMacOS || isLinux || isUnix) {
     // const command = action === "shutdown" ? "poweroff" : "reboot";
@@ -335,7 +335,7 @@ const createTask = async ({
         console.error(
           `Error setting one-time ${action} with 'at' command: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     } else {
       // Handle daily or weekly scheduling with cron
@@ -375,7 +375,7 @@ const createTask = async ({
         console.error(
           `Error setting ${scheduleType} ${action} cron job: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     }
   }
@@ -404,7 +404,7 @@ const deleteTask = async ({
         console.error(
           `Error canceling shutdown for task ${taskName}: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     } else {
       if (atJobId) {
@@ -423,7 +423,7 @@ const deleteTask = async ({
           console.error(
             `Error removing cron job for ${taskName}: ${error.message}`
           );
-          throw new Error(error);
+          // throw new Error(error);
         }
       }
     }
@@ -443,7 +443,7 @@ const deleteAllTasks = async () => {
         console.error(
           `Error canceling shutdown for task ${taskName}: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     }
   } else {
@@ -460,6 +460,7 @@ const deleteAllTasks = async () => {
     try {
       // delete all cron jobs
       const stdout = await execAsync(`crontab -l`);
+
       let skipNext = false;
       const updatedCron = stdout
         .split("\n")
@@ -483,12 +484,13 @@ const deleteAllTasks = async () => {
         console.error(
           `Error updating crontab to remove shutdown tasks: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     } catch (error) {
       console.error(`Error listing cron jobs: ${error.message}`);
-      throw new Error(error);
-      return;
+      console.error(`Perhaps there aren't any cron jobs`);
+      // throw new Error(error);
+      // return;
     }
   }
   await saveSchedules([]);
@@ -511,7 +513,7 @@ const enableTask = async ({ taskName }: { taskName: string }) => {
       console.log(`Task ${taskName} enabled successfully.`);
     } catch (error) {
       console.error(`Error enabling task ${taskName}: ${error.message}`);
-      throw new Error(error);
+      // throw new Error(error);
       return;
     }
   } else {
@@ -538,7 +540,7 @@ const disableTask = async ({ taskName }: { taskName: string }) => {
       console.log(`Task ${taskName} disabled successfully.`);
     } catch (error) {
       console.error(`Error disabling task ${taskName}: ${error.message}`);
-      throw new Error(error);
+      // throw new Error(error);
       return;
     }
   } else {
@@ -559,7 +561,7 @@ const enableAllTasks = async () => {
         console.error(
           `Error enabling task ${schedule.taskName}: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     } else {
       enableCronTask(schedule.taskName);
@@ -580,7 +582,7 @@ const disableAllTasks = async () => {
         console.error(
           `Error disabling task ${schedule.taskName}: ${error.message}`
         );
-        throw new Error(error);
+        // throw new Error(error);
       }
     } else {
       disableCronTask(schedule.taskName);

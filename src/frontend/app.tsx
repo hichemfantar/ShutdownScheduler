@@ -265,7 +265,7 @@ export function App() {
                       <div>
                         <div className="flex flex-col gap-2">
                           <Label>
-                            Databse file `{scheduleFileName}` location:
+                            Database file `{scheduleFileName}` location:
                           </Label>
                           <div className="flex items-center gap-2">
                             <div className="grid flex-1 gap-2">

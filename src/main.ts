@@ -52,6 +52,7 @@ const createWindow = () => {
     shell.openExternal(details.url); // Open URL in user's browser.
     return { action: "deny" }; // Prevent the app from opening the URL.
   });
+  mainWindow.maximize();
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

@@ -3,17 +3,17 @@ import { format } from "date-fns";
 import { contextBridge, ipcRenderer } from "electron";
 import fs from "fs";
 import os from "os";
-import { taskNamePrefix } from "./common";
+import { DayOfWeek, taskNamePrefix } from "./common";
 
 // Define a type for shutdown schedule entries
-export interface ShutdownSchedule {
+export interface SerializedScheduledTask {
   action: "shutdown" | "reboot";
   taskName: string;
   timestamp: number;
   scheduledTime: string;
   enabled: boolean;
   scheduleType: "once" | "daily" | "weekly";
-  daysOfWeek?: string[];
+  daysOfWeek?: DayOfWeek[];
   // Optional job ID for one-time scheduling with `at`
   atJobId?: string;
 }
@@ -75,13 +75,13 @@ const loadSchedules = async () => {
   const path = await taskDatabaseFilePath();
   if (fs.existsSync(path)) {
     const data = fs.readFileSync(path, "utf-8");
-    return JSON.parse(data) as ShutdownSchedule[];
+    return JSON.parse(data) as SerializedScheduledTask[];
   }
   return [];
 };
 
 // Helper function to save schedules to a JSON file
-const saveSchedules = async (schedules: ShutdownSchedule[]) => {
+const saveSchedules = async (schedules: SerializedScheduledTask[]) => {
   const path = await taskDatabaseFilePath();
   fs.writeFileSync(path, JSON.stringify(schedules, null, 2));
 };
@@ -199,7 +199,7 @@ const createTask = async ({
   delayInDays: number;
   action: "shutdown" | "reboot";
   scheduleType: "once" | "daily" | "weekly";
-  daysOfWeek?: string[];
+  daysOfWeek?: DayOfWeek[];
   enabled?: boolean;
   onSuccess?: () => void;
 }) => {
@@ -593,6 +593,7 @@ export const bridgeApi = {
   disableAllTasks,
 
   isDev: () => ipcRenderer.invoke("isDev", ["hey"]),
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke("getAppVersion"),
   getOs: () => os.platform(),
   openTaskScheduler: () => execAsync("start taskschd.msc"),
   openFileExplorerInUserDataFolder: async () => {

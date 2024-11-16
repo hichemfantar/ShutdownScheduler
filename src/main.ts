@@ -9,6 +9,7 @@ declare const MAIN_WINDOW_VITE_NAME: string;
 
 updateElectronApp({
   notifyUser: true,
+  updateInterval: "1 hour",
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -91,6 +92,9 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("getUserDataLocation", () => {
     return path.join(isDev ? __dirname : app.getPath("userData"));
+  });
+  ipcMain.handle("getAppVersion", () => {
+    return app.getVersion();
   });
   // ipcMain.handle("createTask", async (e, args) => {
   //   console.log(args);

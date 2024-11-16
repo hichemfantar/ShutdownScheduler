@@ -1,4 +1,11 @@
-import { scheduleFileName, taskNamePrefix } from "@/common";
+import {
+  DayOfWeek,
+  getFullDayName,
+  githubRepository,
+  githubRepositoryLatestRelease,
+  scheduleFileName,
+  taskNamePrefix,
+} from "@/common";
 import { ModeToggle } from "@/components/theme/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +43,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ShutdownSchedule } from "@/preload";
+import { SerializedScheduledTask } from "@/preload";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   BugIcon,
@@ -61,6 +68,10 @@ export function App() {
   const [isFirstTime, setIsFirstTime] = useState(false);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
+  const getAppVersionQuery = useQuery({
+    queryKey: ["getAppVersion"],
+    queryFn: window.bridge.getAppVersion,
+  });
   const getTasksQuery = useQuery({
     queryKey: ["tasks"],
     queryFn: window.bridge.getTasks,
@@ -120,14 +131,19 @@ export function App() {
     "once"
   );
 
-  const [days, setDays] = useState([
-    { day: "Mon", selected: true },
-    { day: "Tue", selected: false },
-    { day: "Wed", selected: false },
-    { day: "Thu", selected: false },
-    { day: "Fri", selected: false },
-    { day: "Sat", selected: false },
-    { day: "Sun", selected: false },
+  const [days, setDays] = useState<
+    {
+      day: DayOfWeek;
+      selected: boolean;
+    }[]
+  >([
+    { day: "mon", selected: true },
+    { day: "tue", selected: false },
+    { day: "wed", selected: false },
+    { day: "thu", selected: false },
+    { day: "fri", selected: false },
+    { day: "sat", selected: false },
+    { day: "sun", selected: false },
   ]);
 
   const [delayInMinutes, setDelayInMinutes] = useState(5);
@@ -136,7 +152,7 @@ export function App() {
 
   const totalDelay = delayInMinutes + delayInHours * 60 + delayInDays * 24 * 60;
 
-  const handleDaySelect = (day: string) => {
+  const handleDaySelect = (day: DayOfWeek) => {
     if (selectedDays.length === 1 && selectedDays.includes(day)) {
       toast({
         title: "Error",
@@ -169,13 +185,30 @@ export function App() {
     <>
       {/* use this for center */}
       {/* <div className="min-h-dvh flex items-center mx-auto  container xflex justify-center xitems-center h-full xpy-8 px-4 md:px-20"> */}
-      <div className=" mx-auto  container xflex justify-center xitems-center h-full py-8 px-4 md:px-20">
+      <div className="mx-auto container xflex justify-center xitems-center h-full py-8 px-4 md:px-20">
         <div>
           <div className="flex items-center justify-between flex-wrap gap-1 mb-8">
             <div>
               <h1 className="text-3xl font-bold">Schedule a task</h1>
             </div>
             <div className="flex items-center gap-2">
+              {!!getAppVersionQuery.data && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="ghost">
+                      <a
+                        target="_blank"
+                        href={`${githubRepositoryLatestRelease}`}
+                      >
+                        {getAppVersionQuery.data}
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Check for updates</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {false && <ModeToggle />}
               <Dialog
                 onOpenChange={(isOpen) => {
@@ -419,10 +452,7 @@ export function App() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button asChild variant="ghost" size="icon">
-                    <a
-                      target="_blank"
-                      href="https://github.com/hichemfantar/ShutdownScheduler"
-                    >
+                    <a target="_blank" href={githubRepository}>
                       <GithubIcon />
                     </a>
                   </Button>
@@ -486,68 +516,21 @@ export function App() {
                   <div className="text-xl font-bold mb-4">Days of the Week</div>
                   <div className="flex flex-wrap gap-4 backdrop-blur rounded items-center">
                     {/* <div className="bg-white/5 flex flex-wrap gap-4 p-4 backdrop-blur rounded"> */}
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Monday"
-                        checked={days.find((d) => d.day === "Mon")?.selected}
-                        onCheckedChange={() => handleDaySelect("Mon")}
-                      />
-                      <Label htmlFor="Monday">Monday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Tuesday"
-                        checked={days.find((d) => d.day === "Tue")?.selected}
-                        onCheckedChange={() => handleDaySelect("Tue")}
-                      />
-                      <Label htmlFor="Tuesday">Tuesday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Wednesday"
-                        checked={days.find((d) => d.day === "Wed")?.selected}
-                        onCheckedChange={() => handleDaySelect("Wed")}
-                      />
-                      <Label htmlFor="Wednesday">Wednesday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Thursday"
-                        checked={days.find((d) => d.day === "Thu")?.selected}
-                        onCheckedChange={() => handleDaySelect("Thu")}
-                      />
-                      <Label htmlFor="Thursday">Thursday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Friday"
-                        checked={days.find((d) => d.day === "Fri")?.selected}
-                        onCheckedChange={() => handleDaySelect("Fri")}
-                      />
-                      <Label htmlFor="Friday">Friday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Saturday"
-                        checked={days.find((d) => d.day === "Sat")?.selected}
-                        onCheckedChange={() => handleDaySelect("Sat")}
-                      />
-                      <Label htmlFor="Saturday">Saturday</Label>
-                    </div>
-                    <div className="h-9 bg-gray-50/20 w-[1px]"></div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="Sunday"
-                        checked={days.find((d) => d.day === "Sun")?.selected}
-                        onCheckedChange={() => handleDaySelect("Sun")}
-                      />
-                      <Label htmlFor="Sunday">Sunday</Label>
-                    </div>
+                    {days.map((day) => (
+                      <div
+                        key={day.day}
+                        className="flex items-center space-x-2"
+                      >
+                        <Switch
+                          id={day.day}
+                          checked={day.selected}
+                          onCheckedChange={() => handleDaySelect(day.day)}
+                        />
+                        <Label htmlFor={day.day}>
+                          {getFullDayName(day.day)}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -723,7 +706,7 @@ export function App() {
   );
 }
 
-export function TaskRow({ task }: { task: ShutdownSchedule }) {
+export function TaskRow({ task }: { task: SerializedScheduledTask }) {
   const { toast } = useToast();
 
   const deleteTaskMutation = useMutation({
@@ -786,7 +769,9 @@ export function TaskRow({ task }: { task: ShutdownSchedule }) {
           {task.scheduleType === "weekly" && task.daysOfWeek.length > 0 && (
             <div className="flex gap-2">
               {task.daysOfWeek.map((day) => (
-                <Badge variant="default">{day}</Badge>
+                <Badge key={day} variant="default" className="capitalize">
+                  {getFullDayName(day)}
+                </Badge>
               ))}
             </div>
           )}

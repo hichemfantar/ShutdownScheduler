@@ -15,8 +15,11 @@ export const queryClient = new QueryClient({
     mutations: {
       onError: (error) =>
         toast({
-          title: error.name,
-          description: error.message,
+          title: "Error",
+          description: "Please report the issue on GitHub.",
+          // description: "An error occurred. Please try again later.",
+          // title: error.name,
+          // description: error.message,
           variant: "destructive",
         }),
     },

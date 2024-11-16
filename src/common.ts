@@ -1,2 +1,2 @@
-export const taskNamePrefix = "ShutdownSchedulerTask";
-export const scheduleFileName = "shutdownSchedules.json";
+export const taskNamePrefix = "ScheduledTask";
+export const scheduleFileName = "taskDatabase.json";

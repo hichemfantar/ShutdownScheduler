@@ -39,7 +39,7 @@ const execAsync = (command: string, options?: ExecOptions): Promise<string> => {
 };
 
 // Paths and constants
-const shutdownSchedulesPath = async () => {
+const taskDatabaseFilePath = async () => {
   const fileLocation: string = await ipcRenderer.invoke("getSaveLocation");
   console.log(fileLocation);
 
@@ -72,7 +72,7 @@ function formatWindowsScheduledDate(timestamp: number) {
 
 // Helper function to load schedules from a JSON file
 const loadSchedules = async () => {
-  const path = await shutdownSchedulesPath();
+  const path = await taskDatabaseFilePath();
   if (fs.existsSync(path)) {
     const data = fs.readFileSync(path, "utf-8");
     return JSON.parse(data) as ShutdownSchedule[];
@@ -82,7 +82,7 @@ const loadSchedules = async () => {
 
 // Helper function to save schedules to a JSON file
 const saveSchedules = async (schedules: ShutdownSchedule[]) => {
-  const path = await shutdownSchedulesPath();
+  const path = await taskDatabaseFilePath();
   fs.writeFileSync(path, JSON.stringify(schedules, null, 2));
 };
 
@@ -175,7 +175,7 @@ const deleteAtTask = async (jobId: string) => {
 // ------------------------------------------------------------------
 // ------------------------------------------------------------------
 
-const listShutdownSchedules = async () => {
+const getTasks = async () => {
   console.log(await loadSchedules());
 
   return (await loadSchedules()).map((schedule) => ({
@@ -576,7 +576,7 @@ const disableAllTasks = async () => {
 
 // Shutdown scheduling and management API
 export const bridgeApi = {
-  listShutdownSchedules,
+  getTasks,
 
   createTask,
 
@@ -611,7 +611,7 @@ export const bridgeApi = {
   },
   getUserDataLocation: (): Promise<string> =>
     ipcRenderer.invoke("getUserDataLocation"),
-  getShutdownSchedulesPath: () => shutdownSchedulesPath(),
+  getTaskDatabaseFilePath: () => taskDatabaseFilePath(),
   runCommandInTerminal: async (command: string) => {
     // The command you want to run in the Terminal
     // const terminalCommand = 'echo \\"Hello, World!\\"';

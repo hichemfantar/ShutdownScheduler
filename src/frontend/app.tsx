@@ -1,4 +1,4 @@
-import { taskNamePrefix } from "@/common";
+import { scheduleFileName, taskNamePrefix } from "@/common";
 import { ModeToggle } from "@/components/theme/mode-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,7 @@ export function App() {
 
   const getTasksQuery = useQuery({
     queryKey: ["tasks"],
-    queryFn: window.bridge.listShutdownSchedules,
+    queryFn: window.bridge.getTasks,
   });
   const getOsQuery = useQuery({
     queryKey: ["os"],
@@ -73,9 +73,9 @@ export function App() {
     queryKey: ["userDataLocation"],
     queryFn: window.bridge.getUserDataLocation,
   });
-  const getShutdownSchedulesPathQuery = useQuery({
-    queryKey: ["getShutdownSchedulesPath"],
-    queryFn: window.bridge.getShutdownSchedulesPath,
+  const getTaskDatabaseFilePathQuery = useQuery({
+    queryKey: ["getTaskDatabaseFilePath"],
+    queryFn: window.bridge.getTaskDatabaseFilePath,
   });
   const openTaskSchedulerMutation = useMutation({
     mutationKey: ["openTaskScheduler"],
@@ -228,14 +228,16 @@ export function App() {
                     </a>
                   </p>
                   {getUserDataLocationQuery.data &&
-                    getShutdownSchedulesPathQuery.data && (
+                    getTaskDatabaseFilePathQuery.data && (
                       <div>
                         <div className="flex flex-col gap-2">
-                          <Label>Schedule file location:</Label>
+                          <Label>
+                            Databse file `{scheduleFileName}` location:
+                          </Label>
                           <div className="flex items-center gap-2">
                             <div className="grid flex-1 gap-2">
                               <Input
-                                value={getShutdownSchedulesPathQuery.data}
+                                value={getTaskDatabaseFilePathQuery.data}
                                 readOnly
                               />
                             </div>

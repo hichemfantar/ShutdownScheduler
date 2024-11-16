@@ -39,6 +39,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CopyIcon,
   ExternalLinkIcon,
+  GithubIcon,
   InfoIcon,
   LoaderIcon,
   PlusIcon,
@@ -71,6 +72,10 @@ export function App() {
     mutationFn: window.bridge.deleteAllTasks,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Tasks Deleted",
+        description: "All tasks have been deleted successfully.",
+      });
     },
   });
   const createTaskMutation = useMutation({
@@ -78,6 +83,10 @@ export function App() {
     mutationFn: window.bridge.createTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Task Created",
+        description: "Task has been scheduled successfully.",
+      });
     },
   });
   const disableAllTasksMutation = useMutation({
@@ -141,7 +150,7 @@ export function App() {
               <h1 className="text-3xl font-bold">Schedule a task</h1>
             </div>
             <div className="flex items-center gap-2">
-              <ModeToggle />
+              {false && <ModeToggle />}
               <Dialog defaultOpen>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -294,6 +303,14 @@ export function App() {
                   </div>
                 </DialogContent>
               </Dialog>
+              <Button asChild variant="ghost" size="icon">
+                <a
+                  target="_blank"
+                  href="https://github.com/hichemfantar/ShutdownScheduler"
+                >
+                  <GithubIcon />
+                </a>
+              </Button>
             </div>
           </div>
           <div className="flex flex-col gap-8">
@@ -581,11 +598,17 @@ export default function TaskRow({
     jobId?: string;
   };
 }) {
+  const { toast } = useToast();
+
   const deleteTaskMutation = useMutation({
     mutationKey: ["deleteTask"],
     mutationFn: window.bridge.deleteTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Task Deleted",
+        description: "Task has been deleted successfully.",
+      });
     },
   });
   const enableTaskMutation = useMutation({
@@ -593,6 +616,10 @@ export default function TaskRow({
     mutationFn: window.bridge.enableTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Task Enabled",
+        description: "Task has been enabled successfully.",
+      });
     },
   });
   const disableTaskMutation = useMutation({
@@ -600,6 +627,10 @@ export default function TaskRow({
     mutationFn: window.bridge.disableTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Task Disabled",
+        description: "Task has been disabled successfully.",
+      });
     },
   });
 

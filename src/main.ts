@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
 import started from "electron-squirrel-startup";
 import path from "path";
 
@@ -28,7 +28,7 @@ const createWindow = () => {
       sandbox: false,
       // scrollBounce: true,
     },
-    useContentSize: true,
+    // useContentSize: true,
     // backgroundColor: "#00000090",
     // backgroundColor: "#00000000",
     // backgroundColor: "transparent",
@@ -39,6 +39,12 @@ const createWindow = () => {
     // titleBarStyle: "hidden",
     // transparent: true,
     // frame: false,
+  });
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    // TODO: add check to only load external links in the browser, currently all links are opened in the external browser
+    // TODO: create a whitelist of domains that can be opened in the app
+    shell.openExternal(details.url); // Open URL in user's browser.
+    return { action: "deny" }; // Prevent the app from opening the URL.
   });
 
   // and load the index.html of the app.

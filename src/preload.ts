@@ -619,8 +619,9 @@ export const bridgeApi = {
     const loc: string = await ipcRenderer.invoke("getUserDataLocation");
     let command;
     if (isWindows) {
-      command = `start "${loc}"`;
-      // command = `explorer.exe /select,${loc}`
+      command = `start explorer.exe "${loc}"`;
+      // command = `start "${loc}"`;
+      // command = `start explorer.exe /select,${loc}`
     } else if (isMacOS) {
       command = `open "${loc}"`;
     } else {

@@ -607,12 +607,14 @@ export function App() {
 
           <Card className="mt-8 bg-gray-600/20 xborder-none">
             <CardHeader>
-              <div className={cn("flex items-center justify-between")}>
+              <div
+                className={cn("flex items-center justify-between flex-wrap")}
+              >
                 <div className={cn("flex flex-col space-y-1.5")}>
                   <CardTitle>Schedule</CardTitle>
                   <CardDescription>Manage your schedule here.</CardDescription>
                 </div>
-                <div className="justify-end flex gap-2">
+                <div className="justify-end flex gap-2 flex-wrap">
                   {getOsQuery.data === "win32" && (
                     <Tooltip>
                       <TooltipTrigger asChild>

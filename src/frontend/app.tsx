@@ -781,7 +781,7 @@ export function TaskRow({ task }: { task: SerializedScheduledTask }) {
         </span>
         <div className="flex items-center gap-2">
           {task.scheduleType === "weekly" && task.daysOfWeek.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {task.daysOfWeek.map((day) => (
                 <Badge key={day} variant="default" className="capitalize">
                   {getFullDayName(day)}

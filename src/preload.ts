@@ -638,6 +638,8 @@ export const bridgeApi = {
 
   isDev: () => ipcRenderer.invoke("isDev", ["hey"]),
   getAppVersion: (): Promise<string> => ipcRenderer.invoke("getAppVersion"),
+  onUpdateAvailable: (callback: () => void) =>
+    ipcRenderer.on("update-available", () => callback()),
   getOs: () => os.platform(),
   openTaskScheduler: () => execAsync("start taskschd.msc"),
   openFileExplorerInUserDataFolder: async () => {

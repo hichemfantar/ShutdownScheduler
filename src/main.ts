@@ -1,9 +1,15 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, shell } from "electron";
+import {
+  app,
+  autoUpdater,
+  BrowserWindow,
+  ipcMain,
+  nativeTheme,
+  shell,
+} from "electron";
 import started from "electron-squirrel-startup";
 import path from "path";
 import { updateElectronApp } from "update-electron-app";
 import { scheduleFileName } from "./common";
-
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
@@ -47,6 +53,10 @@ const createWindow = () => {
     // transparent: true,
     // frame: false,
   });
+  autoUpdater.on("update-available", () => {
+    mainWindow.webContents.send("update-available");
+  });
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     // TODO: add check to only load external links in the browser, currently all links are opened in the external browser
     // TODO: create a whitelist of domains that can be opened in the app

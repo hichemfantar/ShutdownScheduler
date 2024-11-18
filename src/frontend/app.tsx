@@ -41,7 +41,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { SerializedScheduledTask } from "@/preload";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -62,6 +62,14 @@ import { queryClient } from ".";
 
 // check psshutdown for sleep mode `psshutdown -d -t 0` https://superuser.com/a/395497
 // type ArgumentTypes = Parameters<typeof window.bridge.createTask>;
+
+window.bridge.onUpdateAvailable(() => {
+  toast({
+    title: "Downloading Update",
+    description: "A new version of the app is available.",
+    // "A new version of the app is available. Please download and install the new version.",
+  });
+});
 
 export function App() {
   const { toast } = useToast();

@@ -13,10 +13,12 @@ import { scheduleFileName } from "./common";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
-updateElectronApp({
-  notifyUser: true,
-  updateInterval: "1 hour",
-});
+if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  updateElectronApp({
+    notifyUser: true,
+    updateInterval: "1 hour",
+  });
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {

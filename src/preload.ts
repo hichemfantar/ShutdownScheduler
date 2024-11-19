@@ -241,14 +241,20 @@ const createTask = async ({
     }
 
     try {
-      await execAsync(schtasksCommand);
-      // TODO: Add support for more advanced settings
       await execAsync(
-        `$task = Get-ScheduledTask -TaskName "${taskName}"; $task.Settings.WakeToRun = $True; $task.Settings.DisallowStartIfOnBatteries = $False; $task.Settings.StopIfGoingOnBatteries = $False; $task | Set-ScheduledTask`,
+        `${schtasksCommand}; $task = Get-ScheduledTask -TaskName "${taskName}"; $task.Settings.WakeToRun = $True; $task.Settings.DisallowStartIfOnBatteries = $False; $task.Settings.StopIfGoingOnBatteries = $False; $task | Set-ScheduledTask;`,
         {
           shell: "powershell.exe",
         }
       );
+
+      // TODO: Add support for more advanced settings
+      // await execAsync(
+      //   `$task = Get-ScheduledTask -TaskName "${taskName}"; $task.Settings.WakeToRun = $True; $task.Settings.DisallowStartIfOnBatteries = $False; $task.Settings.StopIfGoingOnBatteries = $False; $task | Set-ScheduledTask;`,
+      //   {
+      //     shell: "powershell.exe",
+      //   }
+      // );
       // await execAsync(
       //   `$task = Get-ScheduledTask -TaskName "${taskName}"; $task.Settings.WakeToRun = $True; $task | Set-ScheduledTask`,
       //   {

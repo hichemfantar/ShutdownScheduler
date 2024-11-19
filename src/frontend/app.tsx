@@ -68,17 +68,17 @@ window.bridge.onUpdateAvailable(() => {
   const NOTIFICATION_BODY = "A new version of the app is available.";
   const CLICK_MESSAGE = "Notification clicked!";
 
-  new window.Notification(NOTIFICATION_TITLE, {
-    body: NOTIFICATION_BODY,
-  }).onclick = () => {
-    // document.getElementById("output").innerText = CLICK_MESSAGE;
-  };
-
   toast({
     title: NOTIFICATION_TITLE,
     description: NOTIFICATION_BODY,
     // "A new version of the app is available. Please download and install the new version.",
   });
+
+  new window.Notification(NOTIFICATION_TITLE, {
+    body: NOTIFICATION_BODY,
+  }).onclick = () => {
+    // document.getElementById("output").innerText = CLICK_MESSAGE;
+  };
 });
 
 export function App() {

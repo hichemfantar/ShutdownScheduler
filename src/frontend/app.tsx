@@ -64,9 +64,19 @@ import { queryClient } from ".";
 // type ArgumentTypes = Parameters<typeof window.bridge.createTask>;
 
 window.bridge.onUpdateAvailable(() => {
+  const NOTIFICATION_TITLE = "Downloading Update";
+  const NOTIFICATION_BODY = "A new version of the app is available.";
+  const CLICK_MESSAGE = "Notification clicked!";
+
+  new window.Notification(NOTIFICATION_TITLE, {
+    body: NOTIFICATION_BODY,
+  }).onclick = () => {
+    // document.getElementById("output").innerText = CLICK_MESSAGE;
+  };
+
   toast({
-    title: "Downloading Update",
-    description: "A new version of the app is available.",
+    title: NOTIFICATION_TITLE,
+    description: NOTIFICATION_BODY,
     // "A new version of the app is available. Please download and install the new version.",
   });
 });

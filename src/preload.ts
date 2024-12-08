@@ -52,21 +52,31 @@ const isLinux = os.platform() === "linux";
 const isUnix = !isMacOS && !isLinux && !isWindows;
 
 // Function to get the system short date format
-function getWindowsSystemShortDateFormat() {
+function getWindowsSystemShortDateFormat(): string {
   const command = `reg query "HKEY_CURRENT_USER\\Control Panel\\International" /v sShortDate`;
-  const output = execSync(command, { encoding: "utf-8" });
-
-  const match = output.match(/sShortDate\s+REG_SZ\s+(.+)/);
-  return match ? match[1].trim() : "MM/dd/yyyy"; // Fallback to a default format
+  try {
+    const output = execSync(command, { encoding: "utf-8" });
+    const match = output.match(/sShortDate\s+REG_SZ\s+(.+)/);
+    return match ? match[1].trim() : "MM/dd/yyyy"; // Fallback to a default format
+  } catch (error) {
+    console.error("Error fetching system date format:", error);
+    return "MM/dd/yyyy"; // Default fallback format
+  }
 }
 
-// Format the date using the system's short date format
-function formatWindowsScheduledDate(timestamp: number) {
-  const shortDateFormat = getWindowsSystemShortDateFormat();
-  const formattedDate = format(
-    new Date(timestamp),
-    shortDateFormat.replace(/M/g, "M").replace(/d/g, "d").replace(/y/g, "y")
-  );
+// Format the date using the system's short date format with enforced double digits
+function formatWindowsScheduledDate(timestamp: number): string {
+  let shortDateFormat = getWindowsSystemShortDateFormat();
+  console.log("Original shortDateFormat:", shortDateFormat);
+
+  // Ensure the format uses double digits for months and days
+  shortDateFormat = shortDateFormat
+    .replace(/M{1,2}/g, "MM") // Replace any single or double M with MM
+    .replace(/d{1,2}/g, "dd") // Replace any single or double d with dd
+    .replace(/y{2,4}/g, "yyyy"); // Standardize year to 4 digits
+  console.log("shortDateFormat:", shortDateFormat);
+
+  const formattedDate = format(new Date(timestamp), shortDateFormat);
   return formattedDate;
 }
 
@@ -241,6 +251,8 @@ const createTask = async ({
     }
 
     try {
+      console.log(schtasksCommand);
+
       await execAsync(
         `${schtasksCommand}; $task = Get-ScheduledTask -TaskName "${taskName}"; $task.Settings.WakeToRun = $True; $task.Settings.DisallowStartIfOnBatteries = $False; $task.Settings.StopIfGoingOnBatteries = $False; $task | Set-ScheduledTask;`,
         {

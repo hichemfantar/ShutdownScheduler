@@ -43,13 +43,13 @@ _Main interface._
    npm run dev
    ```
 
-3. **Package application**:
+3. **Generate executable**:
 
    ```bash
    npm run package
    ```
 
-4. **Generate platform specific distributables**:
+4. **Generate installer**:
 
    ```bash
    npm run make
